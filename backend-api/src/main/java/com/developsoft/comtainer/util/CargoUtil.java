@@ -17,15 +17,43 @@ import com.developsoft.comtainer.runtime.model.CargoGroupRuntime;
 import com.developsoft.comtainer.runtime.model.CargoItemPlacementRow;
 import com.developsoft.comtainer.runtime.model.CargoItemPlacementRuntime;
 import com.developsoft.comtainer.runtime.model.CargoItemRuntime;
+import com.developsoft.comtainer.runtime.model.CargoItemStepRuntime;
 import com.developsoft.comtainer.runtime.model.CompositeKey;
 import com.developsoft.comtainer.runtime.model.RuntimeListElement;
 import com.developsoft.comtainer.util.comparators.ItemsNumberComparator;
 import com.developsoft.comtainer.util.comparators.LoadPlanStepCoordinatesComparator;
 import com.developsoft.comtainer.util.comparators.LoadPlanStepWeightComparator;
+import com.developsoft.comtainer.util.comparators.RuntimeStepAreaComparator;
 
 public class CargoUtil {
 
-	public static ContainerLoadPlanDto createLoadPlan (final ComtainerRequestDto request) {
+	public static List<ContainerLoadPlanDto> createLoadPlan (final ComtainerRequestDto request) {
+		final List<ContainerLoadPlanDto> result = new ArrayList<ContainerLoadPlanDto>();
+		final int maxLength = request.getContainers().get(0).getLength() / 2;
+		final int maxHeight = request.getContainers().get(0).getHeight();
+		final List<CargoItemRuntime> allItems = createRuntimeObjects(request.getGroups());
+		final List<CargoItemStepRuntime> allSteps = createRuntimeSteps(allItems, maxLength);
+		Collections.sort(allSteps, new RuntimeStepAreaComparator());
+		final List<CargoItemStepRuntime> bottomSteps = new ArrayList<CargoItemStepRuntime>();
+		for (final CargoItemStepRuntime nextStep : allSteps) {
+			if (!nextStep.isPlaced() && nextStep.hasAvailableQuantity(0)) {
+				nextStep.place(0, 0, 0);
+				nextStep.pickTopSteps(allSteps, maxHeight);
+				bottomSteps.add(nextStep);
+			}
+		}
+		
+		for (final CargoItemStepRuntime nextBottomStep : bottomSteps) {
+			final ContainerLoadPlanDto loadPlan = new ContainerLoadPlanDto();
+			loadPlan.setId(nextBottomStep.getItem().getSource().getId());
+			loadPlan.setLoadPlanSteps(nextBottomStep.toDto());
+			result.add(loadPlan);
+		}
+		
+		return result;
+	}
+
+	public static ContainerLoadPlanDto createLoadPlanOld (final ComtainerRequestDto request) {
 		final ContainerLoadPlanDto result = new ContainerLoadPlanDto();
 		final List<LoadPlanStepDto> loadPlanSteps = new ArrayList<LoadPlanStepDto>();
 		result.setLoadPlanSteps(loadPlanSteps);
@@ -44,6 +72,66 @@ public class CargoUtil {
 		ContainerUtil.build(loadPlanSteps, request.getContainers().get(0));
 		Collections.sort(loadPlanSteps, new LoadPlanStepCoordinatesComparator());
 		return result;
+	}
+	
+	private static List<CargoItemStepRuntime> createRuntimeSteps (final List<CargoItemRuntime> allItems, final int maxLength) {
+		final List<CargoItemStepRuntime> result = new ArrayList<CargoItemStepRuntime>();
+		for (final CargoItemRuntime item : allItems) {
+			createRuntimeSteps(result, item, maxLength);
+		}
+		return result;
+	}
+	private static void createRuntimeSteps (final List<CargoItemStepRuntime> steps, final CargoItemRuntime item, 
+										final int totalLength, final int itemLength, final int maxLength, final boolean rotate) {
+		if (totalLength <= maxLength) {
+			steps.addAll(createStepCombinations(item, item.getRemainingQuantity(), rotate));
+		} else if (totalLength <= maxLength * 2) {
+			final int halfQuantity = (item.getRemainingQuantity()+1) /2;
+			steps.addAll(createStepCombinations(item, halfQuantity, rotate));
+			steps.addAll(createStepCombinations(item, item.getRemainingQuantity() - halfQuantity, rotate));
+		} else if (totalLength <= maxLength * 3 && item.getRemainingQuantity() % 3 == 0) {
+			createRuntimeSteps(steps, item, 3, item.getRemainingQuantity() / 3, rotate);
+		} else if (totalLength <= maxLength * 4 && item.getRemainingQuantity() % 4 == 0) {
+			createRuntimeSteps(steps, item, 4, item.getRemainingQuantity() / 4, rotate);
+		} else if (totalLength >= maxLength * 4 && totalLength <= maxLength * 5 && item.getRemainingQuantity() % 5 == 0) {
+			createRuntimeSteps(steps, item, 5, item.getRemainingQuantity() / 5, rotate);
+		} else {
+			int currentQuantity = 0;
+			for (int i = 0; i < item.getRemainingQuantity(); i++) {
+				if ((currentQuantity + 1)* itemLength > maxLength) {
+					steps.addAll(createStepCombinations(item, currentQuantity, rotate));
+					currentQuantity = 0;
+				}
+				currentQuantity++;
+			}
+			if (currentQuantity > 0) {
+				steps.addAll(createStepCombinations(item, currentQuantity, rotate));
+			}
+		}
+	}
+	
+	private static List<CargoItemStepRuntime> createStepCombinations(final CargoItemRuntime item, final int quantity, final boolean rotate) {
+		final List<CargoItemStepRuntime> result = new ArrayList<CargoItemStepRuntime>();
+		for (int i = 1; i <= quantity; i++) {
+			for (int j = 1; j <= i; j++) {
+				result.add(new CargoItemStepRuntime(item, j, rotate));
+			}
+		}
+		return result;
+	}
+	private static void createRuntimeSteps(final List<CargoItemStepRuntime> steps, final CargoItemRuntime item, final int numSteps, final int quantity,	final boolean rotate) {
+		for (int i = 0; i < numSteps; i++) {
+			steps.addAll(createStepCombinations(item, quantity, rotate));
+		}
+	}
+	
+	private static void createRuntimeSteps (final List<CargoItemStepRuntime> steps, final CargoItemRuntime item, final int maxLength) {
+		final int totalLength = item.getLength() * item.getRemainingQuantity();
+		createRuntimeSteps(steps, item, totalLength, item.getLength(), maxLength, false);
+		if (item.getLength() != item.getWidth()) {
+			final int totalWidth = item.getWidth() * item.getRemainingQuantity();
+			createRuntimeSteps(steps, item, totalWidth, item.getWidth(), maxLength, true);
+		}
 	}
 	
 	private static LoadPlanStepDto createStepDto (final CargoItemPlacementRow placementRow) {

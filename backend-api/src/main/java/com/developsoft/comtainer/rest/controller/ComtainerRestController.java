@@ -1,5 +1,7 @@
 package com.developsoft.comtainer.rest.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -21,7 +23,7 @@ public class ComtainerRestController {
 	
 	@CrossOrigin
 	@PostMapping("test1")
-	public ResponseEntity<ContainerLoadPlanDto> test1(@RequestBody final ComtainerRequestDto request) {
+	public ResponseEntity<List<ContainerLoadPlanDto>> test1(@RequestBody final ComtainerRequestDto request) {
 		return ResponseEntity.ok(this.comtainerService.createLoadPlan(request));
 	}
 	

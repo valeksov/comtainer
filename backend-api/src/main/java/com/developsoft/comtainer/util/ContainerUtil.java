@@ -3,18 +3,91 @@ package com.developsoft.comtainer.util;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import com.developsoft.comtainer.rest.dto.CargoItemPlacementDto;
 import com.developsoft.comtainer.rest.dto.ContainerDto;
 import com.developsoft.comtainer.rest.dto.LoadPlanStepDto;
 import com.developsoft.comtainer.runtime.model.ContainerArea;
+import com.developsoft.comtainer.util.comparators.LoadPlanStepWeightComparator;
 
 public class ContainerUtil {
 
 
-	public static void build (final List<LoadPlanStepDto> loadPlanSteps, final ContainerDto container) {
+	public static boolean build (final List<LoadPlanStepDto> loadPlanSteps, final ContainerDto container) {
+		List<LoadPlanStepDto> failedSteps = buildOnce(loadPlanSteps, container);
+		while (failedSteps.size() > 0 && splitFailedSteps(loadPlanSteps, failedSteps)) {
+			loadPlanSteps.forEach(step -> resetCoordinates(step));
+			Collections.sort(loadPlanSteps, new LoadPlanStepWeightComparator());			
+			failedSteps = buildOnce(loadPlanSteps, container);
+		}
+		return failedSteps.size() == 0;
+	}
+	
+	private static boolean splitFailedSteps (final List<LoadPlanStepDto> loadPlanSteps, final List<LoadPlanStepDto> failedSteps) {
+		boolean result = false;
+		for (final LoadPlanStepDto nextFailed : failedSteps) {
+			final int itemSize = nextFailed.getItems().size();
+			if (itemSize > 1) {
+				final int middle = (itemSize + 1) / 2;
+				final LoadPlanStepDto newStep = new LoadPlanStepDto();
+				newStep.setId(UUID.randomUUID().toString());
+				newStep.setStartX(0);
+				newStep.setStartY(0);
+				newStep.setStartZ(0);
+				newStep.setWidth(nextFailed.getWidth());
+				newStep.setHeight(nextFailed.getHeight());
+				final List<CargoItemPlacementDto> firstItems = new ArrayList<CargoItemPlacementDto>();
+				final List<CargoItemPlacementDto> secondItems = new ArrayList<CargoItemPlacementDto>();
+				
+				int itemNewStartX = 0;
+				for (int i = 0; i < itemSize; i++) {
+					final CargoItemPlacementDto nextDto =  nextFailed.getItems().get(i);
+					if (i < middle) {
+						firstItems.add(nextDto);
+					} else {
+						nextDto.setStartX(itemNewStartX);
+						itemNewStartX += getItemLength(nextDto);
+						secondItems.add(nextDto);
+					}
+				}
+				nextFailed.setItems(firstItems);
+				nextFailed.setLength(calculateLength(firstItems));
+				newStep.setItems(secondItems);
+				newStep.setLength(calculateLength(secondItems));
+				loadPlanSteps.add(newStep);
+			}
+		}
+		return result;
+	}
+	
+	private static int getItemLength(final CargoItemPlacementDto item) {
+		int length = 0;
+		switch (item.getOrientation()) {
+			case 2: length = item.getCargo().getWidth(); break;
+			case 4: length = item.getCargo().getHeight(); break;
+			case 5: length = item.getCargo().getWidth(); break;
+			case 6: length = item.getCargo().getHeight(); break;
+			default : length = item.getCargo().getLength();
+		}
+		return length;
+	}
+	private static int calculateLength(final List<CargoItemPlacementDto> items) {
+		int result = 0;
+		for (final CargoItemPlacementDto next : items) {
+			result += getItemLength(next);
+		}
+		return result;
+	}
+	private static List<LoadPlanStepDto> buildOnce (final List<LoadPlanStepDto> loadPlanSteps, final ContainerDto container) {
+		final List<LoadPlanStepDto> failedSteps = new ArrayList<LoadPlanStepDto>();
 		final List<ContainerArea> areaPlan = init(container);
-		loadPlanSteps.forEach(step -> addNewStep(areaPlan, step, null, container));
+		for (final LoadPlanStepDto nextStep : loadPlanSteps) {
+			if (!addNewStep(areaPlan, nextStep, null, container)) {
+				failedSteps.add(nextStep);
+			}
+		}
+		return failedSteps;
 	}
 	
 	public static List<ContainerArea> init(final ContainerDto container) {
@@ -73,6 +146,19 @@ public class ContainerUtil {
 		}
 		final float correctedDimension = ((float)dimension) * cargoSupport /100.0f;
 		return Math.round(correctedDimension);
+	}
+
+	private static void resetCoordinates(final LoadPlanStepDto step) {
+		if (step.getItems() != null) {
+			for (final CargoItemPlacementDto nextDto : step.getItems()) {
+				nextDto.setStartX(nextDto.getStartX() - step.getStartX());
+				nextDto.setStartY(nextDto.getStartY() - step.getStartY());
+				nextDto.setStartZ(nextDto.getStartZ() - step.getStartZ());
+			}
+		}
+		step.setStartX(0);
+		step.setStartY(0);
+		step.setStartZ(0);
 	}
 	
 	private static void updateCoordinates(final ContainerArea freeArea, final LoadPlanStepDto step) {
