@@ -36,7 +36,24 @@ public class CargoItemRuntime {
 		this.group = group;
 	}
 	
+	@SuppressWarnings("unused")
+	private static void print(final CargoItemDto source) {
+		final StringBuffer strBuf = new StringBuffer();
+		if (source.getQuantity() > 1) {
+			strBuf.append(source.getQuantity());
+			strBuf.append(" * ");
+		}
+		strBuf.append(source.getLength());
+		strBuf.append(" x ");
+		strBuf.append(source.getWidth());
+		strBuf.append(" x ");
+		strBuf.append(source.getHeight());
+		strBuf.append(", W ");
+		strBuf.append(source.getWeigth());
+		System.out.println(strBuf.toString());
+	}
 	public static List<CargoItemRuntime> createRotations(final CargoItemDto source, final CargoGroupRuntime group) {
+//		print(source);
 		final List<CargoItemRuntime> result = new ArrayList<CargoItemRuntime>();
 		final String uid = UUID.randomUUID().toString();
 		final CargoItemRuntime orientation1 = new CargoItemRuntime(source, group, 1, uid);

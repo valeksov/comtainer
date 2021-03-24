@@ -12,11 +12,11 @@ public class RuntimeStepCoordinatesComparator implements Comparator<CargoItemSte
 		if (compareZ != 0) {
 			return compareZ;
 		}
-		int compareY = Integer.compare(o1.getStartY(), o2.getStartY());
-		if (compareY != 0) {
-			return compareY;
+		int compareX = Integer.compare(o1.getStartX(), o2.getStartX());
+		if (compareX != 0) {
+			return compareX;
 		}
-		return Integer.compare(o1.getStartX(), o2.getStartX());
+		return Integer.compare(o1.getStartY(), o2.getStartY());
 	}
 
 }

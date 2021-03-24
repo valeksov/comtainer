@@ -19,10 +19,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter
-public class CargoItemStepRuntime {
+public class CargoItemStepRuntime implements Comparable<CargoItemStepRuntime>{
 
 	private final CargoItemRuntime item;
-	private final int orientation;
+	private final int itemOrientation;
+	private int stepOrientation;
 	private final int quantity;
 	private boolean placed;
 	private Integer startX;
@@ -30,27 +31,51 @@ public class CargoItemStepRuntime {
 	private Integer startZ;
 	private final List<CargoItemStepRuntime> topSteps;
 	private boolean skipInNextStep = false;
+	private boolean placedInContainer;
 	
 	public CargoItemStepRuntime (final CargoItemRuntime item, final int quantity, final boolean rotate) {
 		super();
 		this.item = item;
 		this.quantity = quantity;
-		final int correction = rotate ?  item.getOrientation() % 2 == 1 ? 1 : -1 :0;
-		this.orientation = item.getOrientation() + correction;
+		final int correction = rotate ?  correction(item.getOrientation(), false) : 0;
+		this.itemOrientation = item.getOrientation() + correction;
+		this.stepOrientation = 0;
 		this.item.addRuntimeStep(this);
 		this.topSteps = new ArrayList<CargoItemStepRuntime>();
 	}
-
+	
+	public int getItemOrientation() {
+		return stepOrientation * correction(this.itemOrientation, false) + this.itemOrientation;
+	}
+	
+	private static int correction(int val, final boolean inverse) {
+		final int remainder = inverse ? 0 : 1;
+		return val % 2 == remainder ? 1 : -1;
+	}
+	
+	public void rotate() {
+		this.stepOrientation += correction(this.stepOrientation, true);
+		topSteps.forEach(step -> step.rotate());
+	}
+	
 	public int getHeight() {
 		return this.item.getHeight();
 	}
 	
 	public int getLength() {
-		return (this.orientation % 2 == 1 ? this.item.getLength() : this.item.getWidth()) * quantity;
+		return (this.stepOrientation == 0 ? quantity : 1) * getPieceLength();
 	}
 	
+	public int getPieceLength() {
+		return (getItemOrientation() % 2 == 1 ? this.item.getLength() : this.item.getWidth());
+	}
+
+	public int getPieceWidth() {
+		return (getItemOrientation() % 2 == 1 ? this.item.getWidth() : this.item.getLength());
+	}
+
 	public int getWidth() {
-		return this.orientation % 2 == 1 ? this.item.getWidth() : this.item.getLength();
+		return (this.stepOrientation == 1 ? quantity : 1) * getPieceWidth();
 	}
 	
 	public int getArea() {
@@ -81,6 +106,13 @@ public class CargoItemStepRuntime {
 		return result;
 	}
 	
+	public void updateCoordinates(final int startX, final int startY, final int startZ) {
+		this.startX += startX;
+		this.startY += startY;
+		this.startZ += startZ;
+		this.topSteps.forEach(step -> step.updateCoordinates(startX, startY, startZ));
+	}
+	
 	public Long getVolume() {
 		long result =((long) getArea()) * getHeight();
 		for (final CargoItemStepRuntime topStep : this.topSteps) {
@@ -96,7 +128,7 @@ public class CargoItemStepRuntime {
 	}
 	
 	public void pickTopSteps(final List<CargoItemStepRuntime> steps, final int maxHeight) {
-		pickTopStepsForArea(steps, getStartX(), getStartY(), getStartZ() + getHeight(), getLength(), getWidth(), maxHeight - getHeight(), getWeightPerArea());
+		pickTopStepsForArea(steps, getStartX(), getStartY(), getStartZ() + getHeight(), getLength(), getWidth(), maxHeight - getHeight(), getWeight());
 		this.topSteps.forEach(topStep -> pickTopSteps(topStep, steps, maxHeight - getHeight()));
 	}
 
@@ -110,7 +142,7 @@ public class CargoItemStepRuntime {
 		if (step.getLength() > maxLength || step.getWidth() > maxWidth || step.getHeight() > maxHeight) {
 			return false;
 		}
-		if (step.getWeightPerArea() > maxWeightPerArea) {
+		if(step.getWeight() > maxWeightPerArea) {//if (step.getWeightPerArea() > maxWeightPerArea) {
 			return false;
 		}
 		return true;
@@ -140,19 +172,9 @@ public class CargoItemStepRuntime {
 		//We will try another layer on top of the current one
 		if (sameHeight) {
 			final int height = items.get(0).getHeight();
-			final float minWeightPerArea = getMinWeightPerArea(items);
+			final float minWeightPerArea = items.get(0).getWeight();//getMinWeightPerArea(items);
 			pickTopStepsForArea(allSteps, startX, startY, startZ + height, totalLength, totalWidth, maxHeight - height, minWeightPerArea);
 		}
-	}
-	
-	private float getMinWeightPerArea (final List<CargoItemStepRuntime> items) {
-		float minWeightPerArea = Float.MAX_VALUE;
-		for (final CargoItemStepRuntime step : items) {
-			if (minWeightPerArea > step.getWeightPerArea()) {
-				minWeightPerArea = step.getWeightPerArea();
-			}
-		}
-		return minWeightPerArea;
 	}
 	
 	private void pickTopStepsForArea(final List<CargoItemStepRuntime> steps, final int startX, final int startY, final int startZ, 
@@ -171,7 +193,7 @@ public class CargoItemStepRuntime {
 				} else {
 					final List<CargoItemStepRuntime> widthMatch = findExactMatch(areaCandidates, curLen, curWid, false);
 					if (widthMatch.size() > 0) {
-						placeMatchItems(steps, lengthMatch, startX, startY, startZ, false, maxHeight, maxWeightPerArea);
+						placeMatchItems(steps, widthMatch, startX, startY, startZ, false, maxHeight, maxWeightPerArea);
 						return;
 					}
 				}
@@ -257,7 +279,7 @@ public class CargoItemStepRuntime {
 		return findMatchingSubset(allSubsets);
 	}
 	
-	public static void findSubsets(final Set<List<CargoItemStepRuntime>> allSubsets, final List<CargoItemStepRuntime> allSteps, final int sum, final boolean sameLength) {
+	public static void findSubsets1(final Set<List<CargoItemStepRuntime>> allSubsets, final List<CargoItemStepRuntime> allSteps, final int sum, final boolean sameLength) {
 		if (allSteps.size() == 0) {
 			return;
 		}
@@ -273,9 +295,43 @@ public class CargoItemStepRuntime {
 		for (int i = 0; i < allSteps.size(); i++) {
 			final List<CargoItemStepRuntime> subset = new ArrayList<>(allSteps);
 			subset.remove(i);
-			findSubsets(allSubsets, subset, sum, sameLength);
+			findSubsets1(allSubsets, subset, sum, sameLength);
 		}
 	}
+	public static void findSubsets(final Set<List<CargoItemStepRuntime>> allSubsets, final List<CargoItemStepRuntime> arr, final int sum, final boolean sameLength) {
+		final List<CargoItemStepRuntime> arrLocal = new ArrayList<CargoItemStepRuntime>();
+		final int maxIndex = Math.min (arr.size(), 25);
+		arrLocal.addAll(arr.subList(0, maxIndex));
+		findSubsets(allSubsets, arrLocal, sum, 0, "", sameLength);
+    }
+
+    public static void findSubsets(final Set<List<CargoItemStepRuntime>> allSubsets, final List<CargoItemStepRuntime> arr, 
+    									final int sum, final int i, final String accIn, final boolean sameLength) 
+    {
+    	String acc = accIn;
+        if (sum == 0 && !"".equals(acc)) {
+            final String[] accArr = acc.split(",");
+            if (accArr != null && accArr.length > 0) {
+            	final List<CargoItemStepRuntime> subset = new ArrayList<CargoItemStepRuntime>();
+            	allSubsets.add(subset);
+            	for (int k = 0; k < accArr.length; k++) {
+            		int index = Integer.parseInt(accArr[k]);
+            		subset.add(arr.get(index));
+            	}
+            }
+            acc = "";
+        }
+        if (i == arr.size()) {
+            return;
+        }
+        findSubsets(allSubsets, arr, sum, i + 1, acc, sameLength);
+        if(!"".equals(acc)) {
+        	acc = acc+",";
+        }
+        final CargoItemStepRuntime step = arr.get(i);
+        final int val = sameLength ? step.getWidth() : step.getLength(); 
+        findSubsets(allSubsets, arr, sum - val, i + 1, acc+i, sameLength);
+    }
 
 	public List<LoadPlanStepDto> toDto() {
 		final List<LoadPlanStepDto> result = new ArrayList<LoadPlanStepDto>();
@@ -290,13 +346,22 @@ public class CargoItemStepRuntime {
 		dto.setHeight(getHeight());
 		final List<CargoItemPlacementDto> dtoItems = new ArrayList<CargoItemPlacementDto>();
 		dto.setItems(dtoItems);
+		int curStartX = getStartX() != null ? getStartX() : 0;
+		int curStartY = getStartY() != null ? getStartY() : 0;
 		for (int i = 0; i < getQuantity(); i++) {
 			final CargoItemPlacementDto nextItemDto = new CargoItemPlacementDto();
 			dtoItems.add(nextItemDto);
 			nextItemDto.setCargo(getItem().getSource());
-			nextItemDto.setOrientation(getOrientation());
-			nextItemDto.setStartX(getStartX() + i * getItem().getLength());
-			nextItemDto.setStartY(getStartY());
+			nextItemDto.setOrientation(getItemOrientation());
+			nextItemDto.setStartX(curStartX);
+			nextItemDto.setStartY(curStartY);
+			if (this.stepOrientation == 0) {
+				curStartX += getPieceLength();
+			} else {
+				curStartY += getPieceWidth();
+			}
+//			nextItemDto.setStartX(getStartX() + i * getItem().getLength());
+//			nextItemDto.setStartY(getStartY());
 			nextItemDto.setStartZ(getStartZ());
 		}
 		if (!isSkipInNextStep()) {
@@ -306,5 +371,65 @@ public class CargoItemStepRuntime {
 			}
 		}
 		return result;
+	}
+
+	@Override
+	public int compareTo(final CargoItemStepRuntime o) {
+		final int compareWeight = Float.compare(getWeight(), o.getWeight());
+		if (compareWeight != 0) {
+			return (-1) * compareWeight;
+		}
+/*		final int compareDensity = Float.compare(getWeightPerArea(), o.getWeightPerArea());
+		if (compareDensity != 0) {
+			return (-1) * compareDensity;
+		}
+*/
+		return (-1) * Integer.compare(getArea(), o.getArea());
+	}
+	public void print (final StringBuilder strB) {
+		strB.append("[ (");
+		strB.append(this.stepOrientation);
+		strB.append(", ");
+		strB.append(getItemOrientation());
+		strB.append(", ");
+		strB.append(item.getOrientation());
+		strB.append(", ");
+		strB.append(isSkipInNextStep());
+		strB.append(") - (");
+		strB.append(getStartX());
+		strB.append(", ");
+		strB.append(getStartY());
+		strB.append(", ");
+		strB.append(getStartZ());
+		strB.append(") - ");
+		if (getQuantity() > 1) {
+			strB.append(getQuantity());
+			strB.append(" * ");
+		}
+		strB.append(getLength()+" x "+getWidth()+" x "+getHeight());
+		strB.append(" W:");
+		strB.append(getWeight());
+		if (this.topSteps.size() > 0) {
+			final List<CargoItemStepRuntime> firstLevel = topSteps.stream().filter(step -> step.isSkipInNextStep()).collect(Collectors.toList());
+			final List<CargoItemStepRuntime> secondLevel = topSteps.stream().filter(step -> !step.isSkipInNextStep()).collect(Collectors.toList());
+			printSteps(strB, firstLevel);
+			printSteps(strB, secondLevel);
+		}
+		strB.append("]");
+
+	}
+	protected void printSteps(final StringBuilder strB, final List<CargoItemStepRuntime> steps) {
+		if (steps.size() > 0) {
+			boolean isFirst = true;
+			strB.append(" -> [ ");
+			for (final CargoItemStepRuntime step : steps) {
+				if (!isFirst) {
+					strB.append(", ");
+				}
+				step.print(strB);
+				isFirst = false;
+			}
+			strB.append("]");
+		}
 	}
 }

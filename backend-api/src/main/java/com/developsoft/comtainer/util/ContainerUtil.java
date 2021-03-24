@@ -8,12 +8,49 @@ import java.util.UUID;
 import com.developsoft.comtainer.rest.dto.CargoItemPlacementDto;
 import com.developsoft.comtainer.rest.dto.ContainerDto;
 import com.developsoft.comtainer.rest.dto.LoadPlanStepDto;
+import com.developsoft.comtainer.runtime.model.BasePackage;
+import com.developsoft.comtainer.runtime.model.CargoItemStepRuntime;
 import com.developsoft.comtainer.runtime.model.ContainerArea;
+import com.developsoft.comtainer.runtime.model.MatrixElement;
+import com.developsoft.comtainer.runtime.model.MatrixRow;
 import com.developsoft.comtainer.util.comparators.LoadPlanStepWeightComparator;
 
 public class ContainerUtil {
 
+	public static boolean placeRuntimeStep (final List<MatrixRow> matrix, final CargoItemStepRuntime step) {
+		final MatrixElement el = findFreeElement(matrix, step);
+		if (el != null) {
+			step.updateCoordinates(el.getRow().getRowNum(), el.getColNum(), 0);
+			markedPlaced(matrix, el.getRow().getRowNum(), el.getColNum(), step.getLength(), step.getWidth());
+			return true;
+		}
+		return false;
+	}
 
+	public static boolean placeRuntimeStep (final List<MatrixRow> matrix, final BasePackage step) {
+		System.out.print("Placing ("+step.getHorizontalRotation());
+		final MatrixElement el = findFreeElement(matrix, step);
+		if (el != null && el.getRow().getRowNum()+step.getLength() < matrix.size() && el.getColNum()+step.getWidth() < el.getRow().getNumColumns()) {
+			System.out.println(","+step.getHorizontalRotation()+") "+step.getLength()+" x "+step.getWidth() + " on ["+el.getRow().getRowNum()+","+el.getColNum()+"]");
+			step.setPlacedInContainer(true);
+			step.updateContainerCoordinates(el.getRow().getRowNum(), el.getColNum());
+			markedPlaced(matrix, el.getRow().getRowNum(), el.getColNum(), step.getLength(), step.getWidth());
+			return true;
+		}
+		return false;
+	}
+	
+	public static MatrixElement findFreeElement (final List<MatrixRow> matrix, final BasePackage step) {
+		MatrixElement el = findFreeElement(matrix, step.getLength(), step.getWidth());
+		if (el == null) {
+			el = findFreeElement(matrix, step.getWidth(), step.getLength());
+			if (el != null) {
+				step.rotate(1);
+			}
+		}
+		return el;
+	}
+	
 	public static boolean build (final List<LoadPlanStepDto> loadPlanSteps, final ContainerDto container) {
 		List<LoadPlanStepDto> failedSteps = buildOnce(loadPlanSteps, container);
 		while (failedSteps.size() > 0 && splitFailedSteps(loadPlanSteps, failedSteps)) {
@@ -96,6 +133,79 @@ public class ContainerUtil {
 		return result;
 	}
 
+	public static List<MatrixRow> init2DMatrix(final ContainerDto container) {
+		final List<MatrixRow> result = new ArrayList<MatrixRow>();
+		for (int rowNum = 0; rowNum < container.getLength(); rowNum++) {
+			result.add(new MatrixRow(rowNum, container.getWidth()));
+		}
+		return result;
+	}
+	
+	public static MatrixElement findFreeElement (final List<MatrixRow> matrix, final CargoItemStepRuntime step) {
+		return findFreeElement(matrix, step.getLength(), step.getWidth());
+	}
+	public static MatrixElement findFreeElement (final List<MatrixRow> matrix, final int len, final int width) {
+		for (int i = 0; i < matrix.size() - len; i++) {
+			final MatrixRow row = matrix.get(i);
+			if (row.getNumberFreeElements() >= width && row.getNumberFreeElements() >= getMaxFreeChain(row)) {
+				for (int j = 0; j < row.getNumColumns() - width; j++) {
+					final MatrixElement curEl = row.getElements().get(j);
+					if (isFree(matrix, curEl, len, width)) {
+						return curEl;
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	private static int getMaxFreeChain (final MatrixRow row) {
+		int maxChain = 0;
+		int curChain = 0;
+		for (int i = 0; i < row.getNumColumns(); i++) {
+			final MatrixElement curEl = row.getElements().get(i);
+			if (!curEl.isPlaced()) {
+				curChain++;
+			} else {
+				if (curChain > maxChain) {
+					maxChain = curChain;
+				}
+				curChain = 0;
+			}
+		}
+		return maxChain;
+	}
+	public static void markedPlaced (final List<MatrixRow> matrix, final int startRow, final int startCol, final int numRows, final int numColumns) {
+		for (int i = startRow; i < startRow + numRows; i++) {
+			final MatrixRow row = matrix.get(i);
+			for (int j= startCol; j < startCol + numColumns; j++) {
+				final MatrixElement curEl = row.getElements().get(j);
+				curEl.place();
+			}
+		}
+	}
+	
+	private static boolean isFree (final List<MatrixRow> matrix, final MatrixElement startEl, final int numRows, final int numColumns) {
+		if (startEl.getRow().getRowNum() + numRows > matrix.size()) {
+			return false;
+		}
+		if (startEl.getColNum() + numColumns > matrix.get(0).getNumColumns()) {
+			return false;
+		}
+		for (int i = startEl.getRow().getRowNum(); i < startEl.getRow().getRowNum() + numRows; i++) {
+			final MatrixRow row = matrix.get(i);
+			if (row.getNumberFreeElements() < numColumns || row.getNumberFreeElements() < getMaxFreeChain(row)) {
+				return false;
+			}
+			for (int j= startEl.getColNum(); j < startEl.getColNum() + numColumns; j++) {
+				if (row.getElements().get(j).isPlaced()) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+	
 	private static boolean withinBoundary (final int coord, final int start, final int size) {
 		return (coord >= start) && (coord < (start + size));
 	}
@@ -127,7 +237,18 @@ public class ContainerUtil {
 			placeStep(areaPlan, step, freeArea);
 		}
 	}
-
+	
+	public static boolean addNewStep (final List<ContainerArea> areaPlan, final CargoItemStepRuntime step, final ContainerDto container) {
+		final ContainerArea freeArea = findArea(areaPlan, step);
+		if (freeArea != null) {
+			step.updateCoordinates(freeArea.getStartX(), freeArea.getStartY(), freeArea.getStartZ());
+			placeStep(areaPlan, step, freeArea);
+			Collections.sort(areaPlan);
+			return true;
+		}		
+		return false;
+	}
+	
 	public static boolean addNewStep (final List<ContainerArea> areaPlan, final LoadPlanStepDto step, final Integer cargoSupport, final ContainerDto container) {
 		final ContainerArea freeArea = findArea(areaPlan, step, cargoSupport, container);
 		if (freeArea != null) {
@@ -140,14 +261,6 @@ public class ContainerUtil {
 		return false;
 	}
 	
-	private static int getWorkingValue (final int dimension, final Integer cargoSupport, final List<CargoItemPlacementDto> items) {
-		if (cargoSupport == null || (items != null && items.size() > 1)) {
-			return dimension;
-		}
-		final float correctedDimension = ((float)dimension) * cargoSupport /100.0f;
-		return Math.round(correctedDimension);
-	}
-
 	private static void resetCoordinates(final LoadPlanStepDto step) {
 		if (step.getItems() != null) {
 			for (final CargoItemPlacementDto nextDto : step.getItems()) {
@@ -183,6 +296,15 @@ public class ContainerUtil {
 	 * If no such is available we will try again with the cargo support on. In the second step we will ignore all floor areas, 
 	 * since it become meaningless to put bigger item on the floor: it will simply not fit in the container at all 
 	*/
+	private static ContainerArea findArea(final List<ContainerArea> areaPlan, final CargoItemStepRuntime step) {
+		for (final ContainerArea nextArea : areaPlan) {
+			if (nextArea.isFree() && nextArea.getLength() >= step.getLength() && nextArea.getWidth() >= step.getWidth()) {
+				return nextArea;
+			}
+		}
+		return null;
+	}
+	
 	private static ContainerArea findArea(final List<ContainerArea> areaPlan, final LoadPlanStepDto step, final Integer cargoSupport, final ContainerDto container) {
 		for (final ContainerArea nextArea : areaPlan) {
 			if (nextArea.isFree() && nextArea.getHeight() >= step.getHeight()) {
@@ -194,11 +316,6 @@ public class ContainerUtil {
 				//also add a check for the next area in case cargoSupport in not null & workingValue has been corrected
 				//Also take in account if in this case the new cargo item will fit in container at all: startX/Y + biggerDimension <= container.length/width
 				
-				if (cargoSupport != null && nextArea.getStartZ() > 0) {
-					final int workingLength = getWorkingValue(step.getLength(), cargoSupport, step.getItems());
-					final int workingWidth = getWorkingValue(step.getWidth(), cargoSupport, step.getItems());
-					
-				}
 			}
 		}
 		return null;
@@ -215,6 +332,40 @@ public class ContainerUtil {
 			}
 		}
 		return null;
+	}
+
+	private static void placeStep (final List<ContainerArea> areaPlan, final CargoItemStepRuntime step, final ContainerArea freeArea) {
+		final int oldAreaLength = freeArea.getLength();
+		final int oldAreaWidth = freeArea.getWidth();
+		final int oldAreaHeight = freeArea.getHeight();
+		final int oldAreaStartX = freeArea.getStartX();
+		final int oldAreaStartY = freeArea.getStartY();
+		final int oldAreaStartZ = freeArea.getStartZ();
+
+		//1. the original area will become the one with placed cargo
+		freeArea.setLength(step.getLength());
+		freeArea.setWidth(step.getWidth());
+		freeArea.setHeight(step.getHeight());
+		freeArea.setFree(false);
+
+		if (step.getLength() < oldAreaLength) {
+			final int afterXStartX = oldAreaStartX +  step.getLength();
+			final int afterXLength = oldAreaLength - step.getLength();
+			final ContainerArea afterX = createFreeArea(afterXStartX, oldAreaStartY, oldAreaStartZ, afterXLength, step.getWidth(), oldAreaHeight);
+			areaPlan.add(afterX);
+		}
+
+		if (step.getWidth() < oldAreaWidth) {
+			final int afterYStartY = oldAreaStartY +  step.getWidth();
+			final int afterYWidth = oldAreaWidth - step.getWidth();
+			final ContainerArea oldArea = findFreeAreaBeforeByCoordinates(areaPlan, step.getStartX(), afterYStartY, oldAreaStartZ, afterYWidth);
+			if (oldArea != null) {
+				oldArea.setLength(oldArea.getLength() + oldAreaLength);
+			} else {
+				final ContainerArea afterY = createFreeArea(step.getStartX(), afterYStartY, oldAreaStartZ, oldAreaLength, afterYWidth, oldAreaHeight);
+				areaPlan.add(afterY);
+			}
+		}
 	}
 	
 	private static void placeStep (final List<ContainerArea> areaPlan, final LoadPlanStepDto step, final ContainerArea freeArea) {
@@ -272,7 +423,7 @@ public class ContainerUtil {
 		if (beforeXLength + step.getLength() < oldAreaLength) {
 			final int afterXStartX = oldAreaStartX + beforeXLength + step.getLength();
 			final int afterXLength = oldAreaLength - (beforeXLength + step.getLength());
-			final ContainerArea afterX = createFreeArea(afterXStartX, oldAreaStartY, oldAreaStartZ, afterXLength, oldAreaLength, oldAreaHeight);
+			final ContainerArea afterX = createFreeArea(afterXStartX, oldAreaStartY, oldAreaStartZ, afterXLength, oldAreaWidth, oldAreaHeight);
 			areaPlan.add(afterX);
 		}
 	}

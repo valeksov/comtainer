@@ -16,12 +16,15 @@ public class ContainerArea implements Comparable<ContainerArea>{
 	
 	@Override
 	public int compareTo(final ContainerArea other) {
-		if (startX.equals(other.startX) && startY.equals(other.startY)) {
-			return startZ.compareTo(other.startZ);
-		} else if (startX.equals(other.startX)) {
-			return startY.compareTo(other.startY);
+		int compareZ = Integer.compare(getStartZ(), other.getStartZ());
+		if (compareZ != 0) {
+			return compareZ;
 		}
-		return startX.compareTo(other.startX);
+		int compareX = Integer.compare(getStartX(), other.getStartX());
+		if (compareX != 0) {
+			return compareX;
+		}
+		return Integer.compare(getStartY(), other.getStartY());
 	}
 
 }
