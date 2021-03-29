@@ -1,13 +1,34 @@
 package com.developsoft.comtainer.runtime.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.developsoft.comtainer.runtime.comparators.CargoItemPlacementDimensionComparator;
+import com.developsoft.comtainer.runtime.model.CargoItemPlacementKey;
+import com.developsoft.comtainer.runtime.model.CargoItemPlacementListElement;
 import com.developsoft.comtainer.runtime.model.CargoItemPlacementRuntime;
 
 public class RuntimeUtil {
 
+	public static Map<CargoItemPlacementKey, CargoItemPlacementListElement> mapItems (final List<CargoItemPlacementRuntime> placements, final int dimension) {
+		final Map<CargoItemPlacementKey, CargoItemPlacementListElement> result = new HashMap<CargoItemPlacementKey, CargoItemPlacementListElement>();
+		for (final CargoItemPlacementRuntime nextPlacement : placements) {
+			final CargoItemPlacementKey nextPlacementKey = new CargoItemPlacementKey(nextPlacement, dimension);
+			CargoItemPlacementListElement listElement = result.get(nextPlacementKey);
+			if (listElement == null) {
+				listElement = new CargoItemPlacementListElement(nextPlacementKey);
+				result.put(nextPlacementKey, listElement);
+			}
+			listElement.getElements().add(nextPlacement);
+		}
+		return result;
+	}
+	
 	public static List<CargoItemPlacementRuntime> getMaxChain (final List<CargoItemPlacementRuntime> placements, final int targetSum, final int dimension) {
+		Collections.sort(placements, new CargoItemPlacementDimensionComparator(dimension));
 		final List<CargoItemPlacementRuntime> result = new ArrayList<CargoItemPlacementRuntime>();
 		final List<Integer> indexes = getMaxChain(placements, 0, placements.size(), targetSum, dimension);
 		if (indexes != null && indexes.size() > 0) {

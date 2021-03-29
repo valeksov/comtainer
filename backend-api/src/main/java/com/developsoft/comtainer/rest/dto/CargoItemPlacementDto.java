@@ -10,5 +10,8 @@ public class CargoItemPlacementDto {
 	private Integer startY;
 	private Integer startZ;
 	private Integer orientation; //1-6
+	private Integer length;	
+	private Integer width; 
+	private Integer height; 
 
 }

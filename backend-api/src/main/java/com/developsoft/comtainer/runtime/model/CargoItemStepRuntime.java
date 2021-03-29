@@ -355,6 +355,9 @@ public class CargoItemStepRuntime implements Comparable<CargoItemStepRuntime>{
 			nextItemDto.setOrientation(getItemOrientation());
 			nextItemDto.setStartX(curStartX);
 			nextItemDto.setStartY(curStartY);
+			nextItemDto.setLength(getPieceLength());
+			nextItemDto.setWidth(getPieceWidth());
+			nextItemDto.setHeight(getHeight());
 			if (this.stepOrientation == 0) {
 				curStartX += getPieceLength();
 			} else {

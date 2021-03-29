@@ -31,4 +31,7 @@ public class CargoGroupRuntime {
 		return this.getItems().stream().filter(item -> item.isPlaced()).count() == 0;
 	}
 	
+	public boolean wasPlacedPreviousRun() {
+		return this.source.isAlreadyLoaded();
+	}
 }
