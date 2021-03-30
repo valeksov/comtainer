@@ -1,5 +1,7 @@
 package com.developsoft.comtainer.runtime.model;
 
+import com.developsoft.comtainer.rest.dto.CargoItemPlacementDto;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,6 +23,21 @@ public class CargoItemPlacementRuntime {
 		this.startY = 0;
 		this.startZ = 0;
 		this.placed = false;
+	}
+	
+	public void print() {
+		final StringBuilder strB = new StringBuilder();
+		strB.append("Placement for ");
+		strB.append(getItem().getSource().getId());
+		strB.append(", Orientation: ");
+		strB.append(getOrientation());
+		strB.append(", L:");
+		strB.append(getLength());
+		strB.append(", W:");
+		strB.append(getWidth());
+		strB.append(", H:");
+		strB.append(getHeight());
+		System.out.println(strB.toString());
 	}
 	
 	public void updateCoordinates(final int x, final int y, final int z) {
@@ -56,4 +73,17 @@ public class CargoItemPlacementRuntime {
 		return (getOrientation() < 3) ? getItem().getHeight() : (getOrientation() < 5) ? getItem().getWidth() : getItem().getLength();
 	}
 	
+	public CargoItemPlacementDto toDto() {
+		final CargoItemPlacementDto result = new CargoItemPlacementDto();
+		result.setCargo(getItem().getSource());
+		result.setLength(getLength());
+		result.setWidth(getWidth());
+		result.setHeight(getHeight());
+		result.setOrientation(getOrientation());
+		result.setStartX(getStartX());
+		result.setStartY(getStartY());
+		result.setStartZ(getStartZ());
+		//TBD Color
+		return result;
+	}
 }

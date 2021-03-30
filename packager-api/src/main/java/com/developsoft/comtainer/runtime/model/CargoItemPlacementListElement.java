@@ -44,4 +44,15 @@ public class CargoItemPlacementListElement {
 	public int countAvailableElements() {
 		return getAvailableElements().size();
 	}
+	
+	public void print() {
+		final StringBuilder strB = new StringBuilder();
+		strB.append("[");
+		strB.append(key.getHeight());
+		strB.append(",");
+		strB.append(key.getSecondDimensionValue());
+		strB.append("] - ");
+		strB.append(getAvailableElements().size());
+		System.out.println(strB);
+	}
 }

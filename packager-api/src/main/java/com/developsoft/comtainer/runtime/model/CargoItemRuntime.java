@@ -23,13 +23,50 @@ public class CargoItemRuntime {
 		this.remainingQuantity = source.getQuantity();
 	}
 	
-	public List<CargoItemPlacementRuntime> createPlacements() {
+	private void addItem (final List<CargoItemPlacementRuntime> result, final CargoItemPlacementRuntime item, final int maxLength, final int maxWidth, final int maxHeight, 
+													final boolean fixedLength, final boolean fixedWidth, final boolean fixedHeight) {
+		if (fixedLength && item.getLength() != maxLength) {
+			return;
+		}
+		if (maxLength > 0 && item.getLength() > maxLength) {
+			return;
+		}
+		if (fixedWidth && item.getWidth() != maxWidth) {
+			return;
+		}
+		if (maxWidth > 0 && item.getWidth() > maxWidth) {
+			return;
+		}
+		if (fixedHeight && item.getHeight() != maxHeight) {
+			return;
+		}
+		if (maxHeight > 0 && item.getHeight() > maxHeight) {
+			return;
+		}
+		result.add(item);
+	}
+	
+	public List<CargoItemPlacementRuntime> createPlacements(final int maxLength, final int maxWidth, final int maxHeight, 
+																	final boolean fixedLength, final boolean fixedWidth, final boolean fixedHeight) {
 		final List<CargoItemPlacementRuntime> result = new ArrayList<CargoItemPlacementRuntime>();
-		final int endO = getSource().isRotatable() ? 6 : 2; 
-		for (int i = 1; i <= getRemainingQuantity(); i++) {
-			for (int o = 1; o <= endO; o++) {
-				final CargoItemPlacementRuntime orientation = new CargoItemPlacementRuntime(this, o);
-				result.add(orientation);
+		for (int i = 0; i < getRemainingQuantity(); i++) {
+			addItem(result, new CargoItemPlacementRuntime(this, 1), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
+			if (!getSource().getLength().equals(getSource().getWidth())) {
+				addItem(result, new CargoItemPlacementRuntime(this, 2), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
+			}
+			if(getSource().isRotatable()) {
+				if (!getSource().getHeight().equals(getSource().getWidth())) {
+					addItem(result, new CargoItemPlacementRuntime(this, 3), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
+					if (!getSource().getLength().equals(getSource().getHeight())) {
+						addItem(result, new CargoItemPlacementRuntime(this, 4), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
+					}
+				}
+				if (!getSource().getLength().equals(getSource().getHeight())) {
+					addItem(result, new CargoItemPlacementRuntime(this, 5), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
+					if (!getSource().getHeight().equals(getSource().getWidth())) {
+						addItem(result, new CargoItemPlacementRuntime(this, 6), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
+					}
+				}
 			}
 		}
 		return result;
@@ -69,16 +106,18 @@ public class CargoItemRuntime {
 	
 	public void print() {
 		final StringBuffer strBuf = new StringBuffer();
+		strBuf.append("Runtime Item ");
 		if (getRemainingQuantity() > 1) {
 			strBuf.append(getRemainingQuantity());
 			strBuf.append(" * ");
 		}
+		strBuf.append("(");
 		strBuf.append(getLength());
 		strBuf.append(" x ");
 		strBuf.append(getWidth());
 		strBuf.append(" x ");
 		strBuf.append(getHeight());
-		strBuf.append(", W ");
+		strBuf.append("), W:");
 		strBuf.append(getWeigth());
 		System.out.println(strBuf.toString());
 	}

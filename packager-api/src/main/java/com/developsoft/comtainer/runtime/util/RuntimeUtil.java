@@ -5,15 +5,64 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
+import com.developsoft.comtainer.rest.dto.CargoGroupDto;
 import com.developsoft.comtainer.runtime.comparators.CargoItemPlacementDimensionComparator;
+import com.developsoft.comtainer.runtime.model.CargoGroupRuntime;
 import com.developsoft.comtainer.runtime.model.CargoItemPlacementKey;
 import com.developsoft.comtainer.runtime.model.CargoItemPlacementListElement;
 import com.developsoft.comtainer.runtime.model.CargoItemPlacementRuntime;
+import com.developsoft.comtainer.runtime.model.CargoItemRuntime;
+import com.developsoft.comtainer.runtime.model.ContainerAreaRuntime;
+import com.developsoft.comtainer.runtime.model.LoadPlanStepRuntime;
 
 public class RuntimeUtil {
 
-	public static Map<CargoItemPlacementKey, CargoItemPlacementListElement> mapItems (final List<CargoItemPlacementRuntime> placements, final int dimension) {
+	public static List<CargoItemRuntime> createRuntimeItems (final List<CargoGroupDto> groups) {
+		final List<CargoItemRuntime> result = new ArrayList<CargoItemRuntime>();
+		groups.forEach(source -> result.addAll(new CargoGroupRuntime(source).getItems()));
+		return result;
+	}
+	
+	public static LoadPlanStepRuntime createStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime area) {
+		final int targetDimension = area.getTargetDimension();
+		final int otherDimension = area.getTargetDimension() % 2 + 1;
+		//Step 1: Filter Items heavier than maxWeight
+		final List<CargoItemRuntime> availableItems = items.stream()
+													.filter(item -> area.getMaxWeight() == 0 || item.getWeigth() <= area.getMaxWeight())
+													.collect(Collectors.toList());
+		System.out.println("Searching Placements For Target ("+targetDimension + ") - "+area.getDimensionValue(targetDimension) + "x" + area.getDimensionValue(otherDimension));
+		availableItems.forEach(item -> item.print());
+		//Step 2: Create Placement Runtimes with all available rotations and dimensions not exceeding maxLength, maxWidth and maxHeight
+		final int maxLength = area.getMaxLength();
+		final int maxWidth = area.getMaxWidth();
+		final List<CargoItemPlacementRuntime> placements = 
+				createAvailablePlacements(availableItems, maxLength, maxWidth, area.getMaxHeight(), area.isFixedLength(), area.isFixedWidth(), area.isFixedHeight());
+		placements.forEach(pl -> pl.print());
+		//Step 3: Map items by Height and Length
+		final Map<CargoItemPlacementKey, CargoItemPlacementListElement> mapPlacements = mapPlacements(placements, targetDimension % 2 + 1);
+		mapPlacements.values().forEach(el -> el.print());
+		
+		//Step 4: Get List with placements with max surface area
+		final List<CargoItemPlacementRuntime> newStepPlacements = getMaxChain(mapPlacements, area.getDimensionValue(targetDimension), targetDimension, area.isCheckAllArea());
+		if (newStepPlacements.size() > 0) {
+			System.out.println("Max Chain Found ");
+			newStepPlacements.forEach(pl -> pl.print());
+			System.out.println("--------------------------------------");
+		}
+		return newStepPlacements.size() > 0 ? new LoadPlanStepRuntime(newStepPlacements, area.getStartX(), area.getStartY(), area.getStartZ(), targetDimension) : null;
+	}
+	
+	private static List<CargoItemPlacementRuntime> createAvailablePlacements(final List<CargoItemRuntime> items, final int maxLength, final int maxWidth, final int maxHeight, 
+																		final boolean fixedLength, final boolean fixedWidth, final boolean fixedHeight) {
+		final List<CargoItemPlacementRuntime> result = new ArrayList<CargoItemPlacementRuntime>();
+		items.forEach(item -> result.addAll(item.createPlacements(maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight)));
+		return result;
+	}
+	
+	private static Map<CargoItemPlacementKey, CargoItemPlacementListElement> mapPlacements (final List<CargoItemPlacementRuntime> placements, final int dimension) {
 		final Map<CargoItemPlacementKey, CargoItemPlacementListElement> result = new HashMap<CargoItemPlacementKey, CargoItemPlacementListElement>();
 		for (final CargoItemPlacementRuntime nextPlacement : placements) {
 			final CargoItemPlacementKey nextPlacementKey = new CargoItemPlacementKey(nextPlacement, dimension);
@@ -26,8 +75,33 @@ public class RuntimeUtil {
 		}
 		return result;
 	}
+
+	private static List<CargoItemPlacementRuntime> getMaxChain (final Map<CargoItemPlacementKey, CargoItemPlacementListElement> mapPlacements, 
+																final int targetSum, final int dimension, final boolean checkAllArea) {
+		List<CargoItemPlacementRuntime> result = new ArrayList<CargoItemPlacementRuntime>();
+		int maxArea = 0;
+		int maxSum = 0;
+		for (final Entry<CargoItemPlacementKey, CargoItemPlacementListElement> nextEntry : mapPlacements.entrySet()) {
+			final List<CargoItemPlacementRuntime> entryChain = getMaxChain(nextEntry.getValue().getAvailableElements(), targetSum, dimension);
+			final int entrySum = getSum(entryChain, dimension);
+			final int entryArea = checkAllArea ? entrySum * nextEntry.getKey().getSecondDimensionValue() : entrySum;
+			if (checkAllArea && entryArea == maxArea) {
+				//We will choose the chain with bigger value on the target dimension
+				if (entrySum > maxSum) {
+					maxSum = entrySum;
+					result = entryChain;
+				}
+			} else if (entryArea > maxArea) {
+				maxArea = entryArea;
+				maxSum = entrySum;
+				result = entryChain;
+			}
+		}
+		
+		return result;
+	}
 	
-	public static List<CargoItemPlacementRuntime> getMaxChain (final List<CargoItemPlacementRuntime> placements, final int targetSum, final int dimension) {
+	private static List<CargoItemPlacementRuntime> getMaxChain (final List<CargoItemPlacementRuntime> placements, final int targetSum, final int dimension) {
 		Collections.sort(placements, new CargoItemPlacementDimensionComparator(dimension));
 		final List<CargoItemPlacementRuntime> result = new ArrayList<CargoItemPlacementRuntime>();
 		final List<Integer> indexes = getMaxChain(placements, 0, placements.size(), targetSum, dimension);
@@ -37,6 +111,13 @@ public class RuntimeUtil {
 		return result;
 	}
 	
+	private static int getSum(final List<CargoItemPlacementRuntime> placements, final int dimension) {
+		int sum = 0;
+		for (final CargoItemPlacementRuntime nextPlacement : placements) {
+			sum += nextPlacement.getDimensionValue(dimension);
+		}
+		return sum;
+	}
 	private static int getSum(final List<CargoItemPlacementRuntime> placements, final List<Integer> indexes, final int dimension) {
 		int sum = 0;
 		for (final Integer nextIndex : indexes) {
