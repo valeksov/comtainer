@@ -26,6 +26,18 @@ public class RuntimeUtil {
 		return result;
 	}
 	
+	public static LoadPlanStepRuntime createStep (final List<LoadPlanStepRuntime> steps, final CargoItemRuntime item, final ContainerAreaRuntime source) {
+		final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeigth(), 1.08f, 0, 0, 0, item.getLength(), item.getWidth(), item.getHeight(), false);
+		if (area != null) {
+			final CargoItemPlacementRuntime placement = new CargoItemPlacementRuntime(item, 1);
+			final List<CargoItemPlacementRuntime> placements = new ArrayList<CargoItemPlacementRuntime>();
+			placements.add(placement);
+			final LoadPlanStepRuntime step = new LoadPlanStepRuntime(placements, area.getStartX(), area.getStartY(), area.getStartZ(), 2);
+			return step;
+		}
+		return null;
+	}
+	
 	public static LoadPlanStepRuntime createStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime area) {
 		final int targetDimension = area.getTargetDimension();
 		final int otherDimension = area.getTargetDimension() % 2 + 1;

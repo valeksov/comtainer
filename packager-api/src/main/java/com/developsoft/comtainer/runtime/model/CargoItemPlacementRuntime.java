@@ -15,7 +15,7 @@ public class CargoItemPlacementRuntime {
 	private int startZ;
 	private boolean placed;
 	
-	CargoItemPlacementRuntime(final CargoItemRuntime item, final int orientation) {
+	public CargoItemPlacementRuntime(final CargoItemRuntime item, final int orientation) {
 		super();
 		this.item = item;
 		this.orientation = orientation;

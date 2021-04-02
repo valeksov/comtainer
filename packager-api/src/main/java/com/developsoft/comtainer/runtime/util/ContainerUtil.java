@@ -21,15 +21,20 @@ public class ContainerUtil {
 	}
 	
 	public static ContainerAreaRuntime createContainerArea (final ContainerDto container, final ConfigDto config) {
+		final int cargoSupport = config != null && config.getCargoSupport() != null ? config.getCargoSupport() : 100;
+		return createContainerArea(container.getLength(), container.getWidth(), container.getHeight(), cargoSupport);
+	}	
+	
+	public static ContainerAreaRuntime createContainerArea (final int length, final int width, final int height, final int cargoSupport) {
 		final ContainerAreaRuntime area = new ContainerAreaRuntime();
-		area.setCargoSupport(config != null && config.getCargoSupport() != null ? config.getCargoSupport() : 0);
+		area.setCargoSupport(cargoSupport);
 		area.setCheckAllArea(true);
 		area.setFixedHeight(false);
 		area.setFixedLength(false);
 		area.setFixedWidth(false);
-		area.setMaxHeight(container.getHeight());
-		area.setMaxLength(container.getLength());
-		area.setMaxWidth(container.getWidth());
+		area.setMaxHeight(height);
+		area.setMaxLength(length);
+		area.setMaxWidth(width);
 		area.setMaxWeight(0.0f);
 		area.setStartX(0);
 		area.setStartY(0);

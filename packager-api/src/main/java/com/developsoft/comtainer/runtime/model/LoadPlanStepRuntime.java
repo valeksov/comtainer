@@ -93,6 +93,19 @@ public class LoadPlanStepRuntime {
 		return (dimension < 2) ? getLength() : (dimension < 3) ? getWidth() : getHeight();
 	}
 	
+	
+	public int getEndX() {
+		return getStartX() + getLength();
+	}
+	
+	public int getEndY() {
+		return getStartY() + getWidth();
+	}
+	
+	public int getEndZ() {
+		return getStartZ() + getHeight();
+	}
+	
 	private int getDimensionSum() {
 		int result = 0;
 		for (final CargoItemPlacementRuntime nextPlacement : getPlacements()) {
@@ -112,5 +125,15 @@ public class LoadPlanStepRuntime {
 		result.setStartZ(getStartZ());
 		result.setItems(getPlacements().stream().map(next -> next.toDto()).collect(Collectors.toList()));
 		return result;
+	}
+	
+	public float getMaxSupportingWeight(final float supportWeight) {
+		float minWeigth = Float.MAX_VALUE;
+		for (final CargoItemPlacementRuntime placement : getPlacements()) {
+			if (placement.getItem().getWeigth() < minWeigth) {
+				minWeigth = placement.getItem().getWeigth();
+			}
+		}
+		return (minWeigth < Float.MAX_VALUE) ? minWeigth * supportWeight : 10.0f;
 	}
 }
