@@ -40,18 +40,18 @@ public class CargoItemPlacementRuntime {
 		System.out.println(strB.toString());
 	}
 	
-	public void updateCoordinates(final int x, final int y, final int z) {
-		setStartX(getStartX() + x);
-		setStartY(getStartY() + y);
-		setStartZ(getStartZ() + z);
-	}
-	
 	public boolean place() {
 		boolean result = getItem().markUsed(1);
 		if (result) {
 			this.placed = true;
 		}
 		return result;
+	}
+
+	public void updateCoordinates(final int x, final int y, final int z) {
+		setStartX(getStartX() + x);
+		setStartY(getStartY() + y);
+		setStartZ(getStartZ() + z);
 	}
 	
 	//1 - length; 2 - width; 3 - height
@@ -73,16 +73,16 @@ public class CargoItemPlacementRuntime {
 		return (getOrientation() < 3) ? getItem().getHeight() : (getOrientation() < 5) ? getItem().getWidth() : getItem().getLength();
 	}
 	
-	public CargoItemPlacementDto toDto() {
+	public CargoItemPlacementDto toDto(final LoadPlanStepRuntime parentStep) {
 		final CargoItemPlacementDto result = new CargoItemPlacementDto();
 		result.setCargo(getItem().getSource());
 		result.setLength(getLength());
 		result.setWidth(getWidth());
 		result.setHeight(getHeight());
 		result.setOrientation(getOrientation());
-		result.setStartX(getStartX());
-		result.setStartY(getStartY());
-		result.setStartZ(getStartZ());
+		result.setStartX(parentStep.getStartX() + getStartX());
+		result.setStartY(parentStep.getStartY() + getStartY());
+		result.setStartZ(parentStep.getStartZ() + getStartZ());
 		//TBD Color
 		return result;
 	}

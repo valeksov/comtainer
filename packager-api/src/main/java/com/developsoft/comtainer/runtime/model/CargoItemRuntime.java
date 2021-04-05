@@ -104,9 +104,15 @@ public class CargoItemRuntime {
 		return getSource().getWeigth();
 	}
 	
-	public void print() {
+	public void print(final String preffix) {
 		final StringBuffer strBuf = new StringBuffer();
-		strBuf.append("Runtime Item ");
+		if (preffix != null) {
+			strBuf.append(preffix);
+			strBuf.append(" ");
+		}
+		strBuf.append("Runtime Item (");
+		strBuf.append(getSource().getId());
+		strBuf.append(") ");
 		if (getRemainingQuantity() > 1) {
 			strBuf.append(getRemainingQuantity());
 			strBuf.append(" * ");

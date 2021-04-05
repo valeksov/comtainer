@@ -12,12 +12,7 @@ public class ContainerUtil {
 
 	
 	private static final float DEFAULT_DIMENSION_OFFSET = 0.9f;
-	
 	public static void main(final String[] args) {
-		int len = 120;
-		int cargoSupport = 0;
-		int corLen = getCorrectedWithCargoSupportLength(len, cargoSupport);
-		System.out.println(corLen);
 	}
 	
 	public static ContainerAreaRuntime createContainerArea (final ContainerDto container, final ConfigDto config) {
@@ -42,7 +37,7 @@ public class ContainerUtil {
 		area.setTargetDimension(2);
 		return area;
 	}
-	
+/*	
 	public static void fillArea (final List<CargoItemRuntime> items, final ContainerAreaRuntime source, final boolean fillFullLength) {
 		final LoadPlanStepRuntime mainStep = RuntimeUtil.createStep(items, source);
 		final int sumDimension = source.getTargetDimension() % 2 + 1;
@@ -121,7 +116,6 @@ public class ContainerUtil {
 			}
 		}
 	}
-	
 	private static LoadPlanStepRuntime selectBetterStep (final LoadPlanStepRuntime step1, final LoadPlanStepRuntime step2) {
 		if (step1 != null && step2 == null) {
 			return step1;
@@ -184,7 +178,6 @@ public class ContainerUtil {
 		}
 	}
 
-	
 	private static ContainerAreaRuntime findNextStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime source, final LoadPlanStepRuntime mainStep, final int remainingValue) {
 		final int sumDimension = source.getTargetDimension() % 2 + 1;
 		final ContainerAreaRuntime nextArea = source.clone();
@@ -215,5 +208,5 @@ public class ContainerUtil {
 		}
 		return null;
 	}
-	
+*/	
 }

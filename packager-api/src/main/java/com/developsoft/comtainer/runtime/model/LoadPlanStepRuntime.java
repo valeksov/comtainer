@@ -13,9 +13,9 @@ import lombok.Setter;
 public class LoadPlanStepRuntime {
 
 	private final List<CargoItemPlacementRuntime> placements;
-	private final Integer startX;
-	private final Integer startY;
-	private final Integer startZ;
+	private Integer startX;
+	private Integer startY;
+	private Integer startZ;
 	private final int dimension;
 	
 	public LoadPlanStepRuntime(final List<CargoItemPlacementRuntime> placements, final Integer startX, final Integer startY, final Integer startZ, final int dimension) {
@@ -41,7 +41,18 @@ public class LoadPlanStepRuntime {
 			}
 		}
 	}
-
+	
+	public boolean isSameStep(final int dimension, final int dimensionSum, final int height, final int otherDimensionvalue) {
+		if (getDimension() != dimension) {
+			return false;
+		}
+		final int otherDimension = getDimension() % 2 + 1;
+		if (getDimensionValue(dimension) != dimensionSum || getDimensionValue(otherDimension) != otherDimensionvalue || getHeight() != height) {
+			return false;
+		}
+		return true;
+	}
+	
 	public void print(final String preffix) {
 		final StringBuilder strB = new StringBuilder();
 		if (preffix != null) {
@@ -71,6 +82,12 @@ public class LoadPlanStepRuntime {
 		for (final CargoItemPlacementRuntime nextPlacement : getPlacements()) {
 			nextPlacement.place();
 		}
+	}
+
+	public void updateCoordinates(final int x, final int y, final int z) {
+		setStartX(x);
+		setStartY(y);
+		setStartZ(z);
 	}
 	
 	public int getArea() {
@@ -123,17 +140,22 @@ public class LoadPlanStepRuntime {
 		result.setStartX(getStartX());
 		result.setStartY(getStartY());
 		result.setStartZ(getStartZ());
-		result.setItems(getPlacements().stream().map(next -> next.toDto()).collect(Collectors.toList()));
+		result.setItems(getPlacements().stream().map(next -> next.toDto(this)).collect(Collectors.toList()));
 		return result;
 	}
 	
 	public float getMaxSupportingWeight(final float supportWeight) {
+		final float minWeigth = getMinItemWeight();
+		return minWeigth * supportWeight;
+	}
+	
+	public float getMinItemWeight() {
 		float minWeigth = Float.MAX_VALUE;
 		for (final CargoItemPlacementRuntime placement : getPlacements()) {
 			if (placement.getItem().getWeigth() < minWeigth) {
 				minWeigth = placement.getItem().getWeigth();
 			}
 		}
-		return (minWeigth < Float.MAX_VALUE) ? minWeigth * supportWeight : 10.0f;
+		return (minWeigth < Float.MAX_VALUE) ? minWeigth : 10.0f;
 	}
 }

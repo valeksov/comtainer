@@ -27,43 +27,45 @@ public class RuntimeUtil {
 	}
 	
 	public static LoadPlanStepRuntime createStep (final List<LoadPlanStepRuntime> steps, final CargoItemRuntime item, final ContainerAreaRuntime source) {
-		final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeigth(), 1.08f, 0, 0, 0, item.getLength(), item.getWidth(), item.getHeight(), false);
-		if (area != null) {
-			final CargoItemPlacementRuntime placement = new CargoItemPlacementRuntime(item, 1);
-			final List<CargoItemPlacementRuntime> placements = new ArrayList<CargoItemPlacementRuntime>();
-			placements.add(placement);
-			final LoadPlanStepRuntime step = new LoadPlanStepRuntime(placements, area.getStartX(), area.getStartY(), area.getStartZ(), 2);
-			return step;
+		final List<CargoItemPlacementRuntime> itemPlacements = 	item.createPlacements(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false, false);
+		for (final CargoItemPlacementRuntime placement : itemPlacements) {
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeigth(), 1.08f, 0, 0, 0, placement.getLength(), placement.getWidth(), placement.getHeight(), false);
+			if (area != null) {
+				final List<CargoItemPlacementRuntime> placements = new ArrayList<CargoItemPlacementRuntime>();
+				placements.add(placement);
+				final LoadPlanStepRuntime step = new LoadPlanStepRuntime(placements, area.getStartX(), area.getStartY(), area.getStartZ(), 2);
+				step.confirm();
+				return step;
+			}
 		}
 		return null;
 	}
 	
-	public static LoadPlanStepRuntime createStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime area) {
+	public static LoadPlanStepRuntime createStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime area, final int targetSum) {
 		final int targetDimension = area.getTargetDimension();
-		final int otherDimension = area.getTargetDimension() % 2 + 1;
+//		final int otherDimension = area.getTargetDimension() % 2 + 1;
 		//Step 1: Filter Items heavier than maxWeight
 		final List<CargoItemRuntime> availableItems = items.stream()
 													.filter(item -> area.getMaxWeight() == 0 || item.getWeigth() <= area.getMaxWeight())
 													.collect(Collectors.toList());
-		System.out.println("Searching Placements For Target ("+targetDimension + ") - "+area.getDimensionValue(targetDimension) + "x" + area.getDimensionValue(otherDimension));
-		availableItems.forEach(item -> item.print());
+//		System.out.println("Searching Placements For Target ("+targetDimension + ") - "+area.getDimensionValue(targetDimension) + "x" + area.getDimensionValue(otherDimension));
+//		availableItems.forEach(item -> item.print(null));
 		//Step 2: Create Placement Runtimes with all available rotations and dimensions not exceeding maxLength, maxWidth and maxHeight
-		final int maxLength = area.getMaxLength();
-		final int maxWidth = area.getMaxWidth();
 		final List<CargoItemPlacementRuntime> placements = 
-				createAvailablePlacements(availableItems, maxLength, maxWidth, area.getMaxHeight(), area.isFixedLength(), area.isFixedWidth(), area.isFixedHeight());
-		placements.forEach(pl -> pl.print());
+				createAvailablePlacements(availableItems, area.getMaxLength(), area.getMaxWidth(), area.getMaxHeight(), area.isFixedLength(), area.isFixedWidth(), area.isFixedHeight());
+//		placements.forEach(pl -> pl.print());
 		//Step 3: Map items by Height and Length
 		final Map<CargoItemPlacementKey, CargoItemPlacementListElement> mapPlacements = mapPlacements(placements, targetDimension % 2 + 1);
-		mapPlacements.values().forEach(el -> el.print());
+//		mapPlacements.values().forEach(el -> el.print());
 		
 		//Step 4: Get List with placements with max surface area
-		final List<CargoItemPlacementRuntime> newStepPlacements = getMaxChain(mapPlacements, area.getDimensionValue(targetDimension), targetDimension, area.isCheckAllArea());
-		if (newStepPlacements.size() > 0) {
+		final List<CargoItemPlacementRuntime> newStepPlacements = getMaxChain(mapPlacements, targetSum, targetDimension, area.isCheckAllArea());
+/*		if (newStepPlacements.size() > 0) {
 			System.out.println("Max Chain Found ");
 			newStepPlacements.forEach(pl -> pl.print());
 			System.out.println("--------------------------------------");
 		}
+*/		
 		return newStepPlacements.size() > 0 ? new LoadPlanStepRuntime(newStepPlacements, area.getStartX(), area.getStartY(), area.getStartZ(), targetDimension) : null;
 	}
 	
@@ -109,7 +111,6 @@ public class RuntimeUtil {
 				result = entryChain;
 			}
 		}
-		
 		return result;
 	}
 	
