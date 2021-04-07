@@ -11,7 +11,7 @@ public class ContainerDto {
 	private Integer width; 
 	private Integer height; 
 	private Long maxAllowedVolume; //in cubic centimeters
-	private Double maxAllowedWeigth; 
+	private Double maxAllowedWeight; 
 	private ContainerLoadPlanDto loadPlan;
 
 }

@@ -17,7 +17,6 @@ public class MatrixUtil {
 		final int endX = x + length;
 		final int endY = y + width;
 		final int endZ = z + height;
-		
 		//Check if we reached one of the ends of the initial source area (Container)
 		if (endX > source.getMaxLength() || endY > source.getMaxWidth() || endZ > source.getMaxHeight()) {
 			return null;

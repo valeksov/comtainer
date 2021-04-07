@@ -16,7 +16,7 @@ public class CargoItemRuntime {
 	private int remainingQuantity;
 	
 	
-	CargoItemRuntime (final CargoItemDto source, final CargoGroupRuntime group) {
+	public CargoItemRuntime (final CargoItemDto source, final CargoGroupRuntime group) {
 		super();
 		this.source = source;
 		this.group = group;
@@ -100,8 +100,8 @@ public class CargoItemRuntime {
 		return getSource().getHeight();
 	}
 	
-	public float getWeigth() {
-		return getSource().getWeigth();
+	public float getWeight() {
+		return getSource().getWeight();
 	}
 	
 	public void print(final String preffix) {
@@ -124,7 +124,7 @@ public class CargoItemRuntime {
 		strBuf.append(" x ");
 		strBuf.append(getHeight());
 		strBuf.append("), W:");
-		strBuf.append(getWeigth());
+		strBuf.append(getWeight());
 		System.out.println(strBuf.toString());
 	}
 

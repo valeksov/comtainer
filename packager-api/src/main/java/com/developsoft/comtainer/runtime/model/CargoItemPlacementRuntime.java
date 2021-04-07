@@ -15,6 +15,16 @@ public class CargoItemPlacementRuntime {
 	private int startZ;
 	private boolean placed;
 	
+	public CargoItemPlacementRuntime(final CargoItemPlacementDto dto) {
+		super();
+		this.orientation = dto.getOrientation();
+		this.startX = dto.getStartX();
+		this.startY = dto.getStartY();
+		this.startZ = dto.getStartZ();
+		this.placed = true;
+		this.item = new CargoItemRuntime(dto.getCargo(), null);
+	}
+	
 	public CargoItemPlacementRuntime(final CargoItemRuntime item, final int orientation) {
 		super();
 		this.item = item;
@@ -23,6 +33,12 @@ public class CargoItemPlacementRuntime {
 		this.startY = 0;
 		this.startZ = 0;
 		this.placed = false;
+	}
+	
+	public CargoItemPlacementRuntime createRotatedCopy() {
+		final int correction = getOrientation() % 2 == 1 ? 1 : -1;
+		final int newOrientation = getOrientation() + correction;
+		return new CargoItemPlacementRuntime(getItem(), newOrientation);
 	}
 	
 	public void print() {
@@ -48,6 +64,12 @@ public class CargoItemPlacementRuntime {
 		return result;
 	}
 
+	public void resetCoordinates() {
+		setStartX(0);
+		setStartY(0);
+		setStartZ(0);
+	}
+	
 	public void updateCoordinates(final int x, final int y, final int z) {
 		setStartX(getStartX() + x);
 		setStartY(getStartY() + y);

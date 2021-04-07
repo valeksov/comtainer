@@ -1,5 +1,6 @@
 package com.developsoft.comtainer.runtime.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -18,6 +19,16 @@ public class LoadPlanStepRuntime {
 	private Integer startZ;
 	private final int dimension;
 	
+	public LoadPlanStepRuntime(final LoadPlanStepDto dto) {
+		super();
+		this.startX = dto.getStartX();
+		this.startY = dto.getStartY();
+		this.startZ = dto.getStartZ();
+		this.dimension = 2;
+		this.placements = dto.getItems() != null ? dto.getItems().stream().map(itemDto -> new CargoItemPlacementRuntime(itemDto)).collect(Collectors.toList()) 
+												: new ArrayList<CargoItemPlacementRuntime>();
+	}
+	
 	public LoadPlanStepRuntime(final List<CargoItemPlacementRuntime> placements, final Integer startX, final Integer startY, final Integer startZ, final int dimension) {
 		super();
 		this.placements = placements;
@@ -26,6 +37,12 @@ public class LoadPlanStepRuntime {
 		this.startZ = startZ;
 		this.dimension = dimension;
 		init();
+	}
+	
+	public LoadPlanStepRuntime createRotatedCopy() {
+		final int reverseDimension = getDimension() % 2 + 1;
+		final List<CargoItemPlacementRuntime> newPlacements = getPlacements().stream().map(next -> next.createRotatedCopy()).collect(Collectors.toList());
+		return new LoadPlanStepRuntime(newPlacements, getStartX(), getStartY(), getStartZ(), reverseDimension);
 	}
 	
 	private void init() {
@@ -152,8 +169,8 @@ public class LoadPlanStepRuntime {
 	public float getMinItemWeight() {
 		float minWeigth = Float.MAX_VALUE;
 		for (final CargoItemPlacementRuntime placement : getPlacements()) {
-			if (placement.getItem().getWeigth() < minWeigth) {
-				minWeigth = placement.getItem().getWeigth();
+			if (placement.getItem().getWeight() < minWeigth) {
+				minWeigth = placement.getItem().getWeight();
 			}
 		}
 		return (minWeigth < Float.MAX_VALUE) ? minWeigth : 10.0f;

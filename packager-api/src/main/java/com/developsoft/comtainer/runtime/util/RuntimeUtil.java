@@ -29,7 +29,7 @@ public class RuntimeUtil {
 	public static LoadPlanStepRuntime createStep (final List<LoadPlanStepRuntime> steps, final CargoItemRuntime item, final ContainerAreaRuntime source) {
 		final List<CargoItemPlacementRuntime> itemPlacements = 	item.createPlacements(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false, false);
 		for (final CargoItemPlacementRuntime placement : itemPlacements) {
-			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeigth(), 1.08f, 0, 0, 0, placement.getLength(), placement.getWidth(), placement.getHeight(), false);
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, 0, 0, 0, placement.getLength(), placement.getWidth(), placement.getHeight(), false);
 			if (area != null) {
 				final List<CargoItemPlacementRuntime> placements = new ArrayList<CargoItemPlacementRuntime>();
 				placements.add(placement);
@@ -46,7 +46,7 @@ public class RuntimeUtil {
 //		final int otherDimension = area.getTargetDimension() % 2 + 1;
 		//Step 1: Filter Items heavier than maxWeight
 		final List<CargoItemRuntime> availableItems = items.stream()
-													.filter(item -> area.getMaxWeight() == 0 || item.getWeigth() <= area.getMaxWeight())
+													.filter(item -> area.getMaxWeight() == 0 || item.getWeight() <= area.getMaxWeight())
 													.collect(Collectors.toList());
 //		System.out.println("Searching Placements For Target ("+targetDimension + ") - "+area.getDimensionValue(targetDimension) + "x" + area.getDimensionValue(otherDimension));
 //		availableItems.forEach(item -> item.print(null));
@@ -67,6 +67,20 @@ public class RuntimeUtil {
 		}
 */		
 		return newStepPlacements.size() > 0 ? new LoadPlanStepRuntime(newStepPlacements, area.getStartX(), area.getStartY(), area.getStartZ(), targetDimension) : null;
+	}
+
+	public static float getAverageWeight (final List<CargoItemRuntime> items) {
+		float totalWeight = 0.0f;
+		int totalNumber = 0;
+		for (final CargoItemRuntime item : items) {
+			totalWeight += item.getWeight()*item.getRemainingQuantity();
+			totalNumber += item.getRemainingQuantity();
+		}
+		return (totalNumber >0) ? totalWeight / totalNumber : 0;
+	}
+
+	public static List<CargoItemRuntime> filterByWeight (final List<CargoItemRuntime> items, final float targetWeight) {
+		return items.stream().filter(item -> item.getWeight() > targetWeight).collect(Collectors.toList());
 	}
 	
 	private static List<CargoItemPlacementRuntime> createAvailablePlacements(final List<CargoItemRuntime> items, final int maxLength, final int maxWidth, final int maxHeight, 
