@@ -112,6 +112,9 @@ public class CargoItemPlacementRuntime {
 		result.setStartY(parentStep.getStartY() + getStartY());
 		result.setStartZ(parentStep.getStartZ() + getStartZ());
 		//TBD Color
+		if (getItem().getGroup() != null) {
+			result.setColor(getItem().getGroup().getSource().getColor());
+		}
 		return result;
 	}
 }

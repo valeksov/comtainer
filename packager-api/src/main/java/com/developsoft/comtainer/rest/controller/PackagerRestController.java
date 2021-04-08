@@ -3,6 +3,7 @@ package com.developsoft.comtainer.rest.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,5 +24,12 @@ public class PackagerRestController {
 	@PostMapping("run")
 	public ResponseEntity<ComtainerResponseDto> run(@RequestBody final ComtainerRequestDto request) {
 		return ResponseEntity.ok(this.packagerService.run(request));
+	}
+	
+	@CrossOrigin
+	@GetMapping(value = "colors",
+			produces = "text/html")
+	public ResponseEntity<String> getColors() {
+		return ResponseEntity.ok(this.packagerService.buildColorPallete());
 	}
 }

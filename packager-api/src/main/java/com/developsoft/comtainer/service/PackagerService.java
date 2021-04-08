@@ -2,6 +2,7 @@ package com.developsoft.comtainer.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -155,4 +156,31 @@ public class PackagerService {
 		return findNextStep(items, source, placedSteps, targetSum - targetDeduction, targetDeduction);
 	}
 	
+	public String buildColorPallete() {
+		final StringBuilder strB = new StringBuilder();
+		strB.append("<html><body><table style=\"width:100%\">");
+		for (int row = 0; row < 25; row++) {
+			strB.append("<tr>");
+			for (int i = 0; i < 15; i++) {
+				strB.append("<td style=\"border: 1px solid orange;\">");
+				strB.append("<table style=\"width:100%\"><tr><td style=\"width:33%\">&nbsp;</td><td style=\"border: 1px solid black; width:33%; background-color:#");
+				final String color = randomColor();
+				strB.append(color);
+				strB.append("\">&nbsp</td><td style=\"width:33%\">&nbsp;</td></tr><tr><td colspan=3 style=\"text-align:center\">");
+				strB.append(color);
+				strB.append("</td></tr></table></td>");
+			}
+			strB.append("</tr>");
+		}
+		strB.append("</table></body></html>");
+		return strB.toString();
+	}
+	
+	final String randomColor() {
+		final Random rnd = new Random();
+		final int r = 10 + rnd.nextInt(245);
+		final int g = 10 + rnd.nextInt(245);
+		final int b = 10 + rnd.nextInt(245);
+		return Integer.toHexString(r) + Integer.toHexString(g) + Integer.toHexString(b);
+	}
 }
