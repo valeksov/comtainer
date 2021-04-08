@@ -65,6 +65,7 @@ public class PackagerService {
 				
 				
 				if (placedSteps.size() > 0) {
+					printStats(container, placedSteps);
 					loadPlan.setLoadPlanSteps(placedSteps.stream().map(step -> step.toDto()).collect(Collectors.toList()));
 				}
 			}
@@ -73,6 +74,25 @@ public class PackagerService {
 		return result;
 	}
 	
+	private static void printStats(final ContainerDto container, final List<LoadPlanStepRuntime> placedSteps) {
+		final long containerFloorArea = ((long)container.getLength()) * ((long)container.getWidth()); 
+		final long containerVolume = containerFloorArea * ((long)container.getHeight());
+		long usedVolume = 0;
+		long usedFloorArea = 0;
+		for (final LoadPlanStepRuntime step: placedSteps) {
+			usedVolume += ((long)step.getLength()) * ((long)step.getWidth()) * ((long)step.getHeight());
+			if (step.getStartZ() == 0) {
+				usedFloorArea += ((long)step.getLength()) * ((long)step.getWidth());
+			}
+		}
+		if (containerFloorArea > 0 && containerVolume > 0) {
+			final int volumePercent = (int) (100.0 * usedVolume / containerVolume);
+			final int floorPercent = (int) (100.0 * usedFloorArea / containerFloorArea);
+			System.out.println ("Volume used: " + usedVolume + "/" + containerVolume + " - " + volumePercent + "%");
+			System.out.println ("Floor area used: " + usedFloorArea + "/" + containerFloorArea + " - " + floorPercent + "%");
+		}
+		
+	}
 	
 	private boolean placeSteps (final List<CargoItemRuntime> items, final ContainerAreaRuntime source, final List<LoadPlanStepRuntime> placedSteps) {
 		boolean result = true;

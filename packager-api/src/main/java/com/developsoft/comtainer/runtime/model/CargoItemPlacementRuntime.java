@@ -53,6 +53,12 @@ public class CargoItemPlacementRuntime {
 		strB.append(getWidth());
 		strB.append(", H:");
 		strB.append(getHeight());
+		strB.append(" on coordinates X=");
+		strB.append(getStartX());
+		strB.append(", Y=");
+		strB.append(getStartY());
+		strB.append(", Z=");
+		strB.append(getStartZ());
 		System.out.println(strB.toString());
 	}
 	

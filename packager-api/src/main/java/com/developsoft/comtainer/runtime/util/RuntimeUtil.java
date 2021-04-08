@@ -33,8 +33,11 @@ public class RuntimeUtil {
 			if (area != null) {
 				final List<CargoItemPlacementRuntime> placements = new ArrayList<CargoItemPlacementRuntime>();
 				placements.add(placement);
-				final LoadPlanStepRuntime step = new LoadPlanStepRuntime(placements, area.getStartX(), area.getStartY(), area.getStartZ(), 2);
+				final LoadPlanStepRuntime step = new LoadPlanStepRuntime(placements, 0, 0, 0, 2);
 				step.confirm();
+				step.updateCoordinates(area.getStartX(), area.getStartY(), area.getStartZ());
+				System.out.println("Placing single item on X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z="+area.getStartZ());
+				placement.print();
 				return step;
 			}
 		}
