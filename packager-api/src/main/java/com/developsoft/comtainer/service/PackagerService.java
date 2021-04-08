@@ -178,9 +178,9 @@ public class PackagerService {
 	
 	final String randomColor() {
 		final Random rnd = new Random();
-		final int r = 10 + rnd.nextInt(245);
-		final int g = 10 + rnd.nextInt(245);
-		final int b = 10 + rnd.nextInt(245);
+		final int r = 20 + rnd.nextInt(230);
+		final int g = 20 + rnd.nextInt(230);
+		final int b = 20 + rnd.nextInt(230);
 		return Integer.toHexString(r) + Integer.toHexString(g) + Integer.toHexString(b);
 	}
 }
