@@ -20,16 +20,24 @@ import com.developsoft.comtainer.runtime.model.LoadPlanStepRuntime;
 
 public class RuntimeUtil {
 
-	public static List<CargoItemRuntime> createRuntimeItems (final List<CargoGroupDto> groups) {
+	public static List<CargoGroupRuntime> createRuntimeGroups (final List<CargoGroupDto> groups) {
+		return groups.stream().map(source -> new CargoGroupRuntime(source)).collect(Collectors.toList());
+	
+	}
+	public static List<CargoItemRuntime> createRuntimeItems (final List<CargoGroupRuntime> groups) {
 		final List<CargoItemRuntime> result = new ArrayList<CargoItemRuntime>();
-		groups.forEach(source -> result.addAll(new CargoGroupRuntime(source).getItems()));
+		groups.forEach(source -> result.addAll(source.getItems()));
 		return result;
 	}
 	
 	public static LoadPlanStepRuntime createStep (final List<LoadPlanStepRuntime> steps, final CargoItemRuntime item, final ContainerAreaRuntime source) {
 		final List<CargoItemPlacementRuntime> itemPlacements = 	item.createPlacements(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false, false);
 		for (final CargoItemPlacementRuntime placement : itemPlacements) {
-			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, 0, 0, 0, placement.getLength(), placement.getWidth(), placement.getHeight(), false);
+			final int length = placement.getLength();
+			final int width = placement.getWidth();
+			final int height = placement.getHeight();
+			final boolean skipZ = !placement.getItem().getSource().isStackable();
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, 0, 0, 0, length, width, height, skipZ, false);
 			if (area != null) {
 				final List<CargoItemPlacementRuntime> placements = new ArrayList<CargoItemPlacementRuntime>();
 				placements.add(placement);

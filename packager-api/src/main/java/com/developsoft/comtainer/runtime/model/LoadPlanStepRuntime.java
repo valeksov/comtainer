@@ -39,6 +39,15 @@ public class LoadPlanStepRuntime {
 		init();
 	}
 	
+	public boolean isNotStackable() {
+		for (final CargoItemPlacementRuntime placement : getPlacements()) {
+			if (!placement.getItem().getSource().isStackable()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public LoadPlanStepRuntime createRotatedCopy() {
 		final int reverseDimension = getDimension() % 2 + 1;
 		final List<CargoItemPlacementRuntime> newPlacements = getPlacements().stream().map(next -> next.createRotatedCopy()).collect(Collectors.toList());

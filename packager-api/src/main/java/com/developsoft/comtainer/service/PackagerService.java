@@ -13,6 +13,7 @@ import com.developsoft.comtainer.rest.dto.ComtainerRequestDto;
 import com.developsoft.comtainer.rest.dto.ComtainerResponseDto;
 import com.developsoft.comtainer.rest.dto.ContainerDto;
 import com.developsoft.comtainer.rest.dto.ContainerLoadPlanDto;
+import com.developsoft.comtainer.runtime.model.CargoGroupRuntime;
 import com.developsoft.comtainer.runtime.model.CargoItemRuntime;
 import com.developsoft.comtainer.runtime.model.ContainerAreaRuntime;
 import com.developsoft.comtainer.runtime.model.LoadPlanStepRuntime;
@@ -31,9 +32,8 @@ public class PackagerService {
 		result.setContainers(request.getContainers());
 		if (request.getContainers() != null && request.getContainers().size() > 0) {
 			final ContainerDto container = request.getContainers().get(0);
-			final ContainerLoadPlanDto loadPlan = new ContainerLoadPlanDto();
-			loadPlan.setId(UUID.randomUUID().toString());
-			container.setLoadPlan(loadPlan);
+			final ContainerLoadPlanDto newLoadPlan = new ContainerLoadPlanDto();
+			newLoadPlan.setId(UUID.randomUUID().toString());
 			if (request.getGroups() != null && request.getGroups().size() > 0) {
 				List<LoadPlanStepRuntime> placedSteps = new ArrayList<LoadPlanStepRuntime>();
 				final ContainerAreaRuntime initialArea = ContainerUtil.createContainerArea(container, request.getConfig());
@@ -43,15 +43,30 @@ public class PackagerService {
 				if (container.getLoadPlan() != null && container.getLoadPlan().getLoadPlanSteps() != null && container.getLoadPlan().getLoadPlanSteps().size() > 0) {
 					System.out.println ("Check with the old plan first");
 					placedSteps.addAll(container.getLoadPlan().getLoadPlanSteps().stream().map(stepDto -> new LoadPlanStepRuntime(stepDto)).collect(Collectors.toList()));
-					final List<CargoItemRuntime> newItems = RuntimeUtil.createRuntimeItems(newGroups);
+					final List<CargoItemRuntime> newItems = RuntimeUtil.createRuntimeItems(RuntimeUtil.createRuntimeGroups(newGroups));
 					success = placeSteps(newItems, initialArea, placedSteps);
+					System.out.println ("Old plan " + (success ? "" : "NOT") + "successful");
 				}
 				//We will start the packaging from the start
+				int lastNewGroupIndex = newGroups.size();
 				if (!success) {
-					placedSteps.clear();
-					final List<CargoItemRuntime> initialItems = RuntimeUtil.createRuntimeItems(request.getGroups());
-					System.out.println ("Total Number of Items: " + initialItems.size());
-					final float averageWeight = RuntimeUtil.getAverageWeight(initialItems);
+					while (lastNewGroupIndex > 0) {
+						System.out.println ("Total Number of New Groups: " + lastNewGroupIndex);
+						placedSteps.clear();
+						final List<CargoItemRuntime> initialItems = RuntimeUtil.createRuntimeItems(RuntimeUtil.createRuntimeGroups(placedGroups));
+						final List<CargoGroupRuntime> newGroupRuntimes = RuntimeUtil.createRuntimeGroups(newGroups);
+						System.out.println ("Total Number of Items: " + initialItems.size());
+						for (int i = 0; i < lastNewGroupIndex; i++) {
+							initialItems.addAll(newGroupRuntimes.get(i).getItems());
+						}
+						success = placeSteps(initialItems, initialArea, placedSteps);
+						if (success) {
+							break;
+						}
+						lastNewGroupIndex--;
+					}
+					
+/*					final float averageWeight = RuntimeUtil.getAverageWeight(initialItems);
 					//1. Try the heaviest packages first (weight 50% higher than the average weight)
 					final List<CargoItemRuntime> mostHeavyItems = RuntimeUtil.filterByWeight(initialItems, averageWeight * 1.5f);
 					System.out.println ("Heaviest Items: " + mostHeavyItems.size());
@@ -61,17 +76,22 @@ public class PackagerService {
 					System.out.println ("Next Heavy Items: " + nextHeavyItems.size());
 					placeSteps(nextHeavyItems, initialArea, placedSteps);
 					//3.Try all the remaining packages (not placed heavy packages and the light ones)
-					success = placeSteps(initialItems, initialArea, placedSteps);
+ */
+					
 				}
 				
 				
-				if (placedSteps.size() > 0) {
+				if (success && placedSteps.size() > 0 && lastNewGroupIndex > 0) {
 					printStats(container, placedSteps);
-					loadPlan.setLoadPlanSteps(placedSteps.stream().map(step -> step.toDto()).collect(Collectors.toList()));
+					container.setLoadPlan(newLoadPlan);
+					newLoadPlan.setLoadPlanSteps(placedSteps.stream().map(step -> step.toDto()).collect(Collectors.toList()));
+					for (int i=0; i < lastNewGroupIndex; i++) {
+						newGroups.get(i).setAlreadyLoaded(true);
+					}					
 				}
+				result.setStatus(success && lastNewGroupIndex == newGroups.size() ? 0 : 1);
 			}
 		}
-		result.setStatus(success ? 0 : 1);
 		return result;
 	}
 	
@@ -138,13 +158,18 @@ public class PackagerService {
 		if (step != null) {
 			System.out.println ("Searching for free area for step");
 			step.print("New Candidate");
-			ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, step.getMinItemWeight(), 1.08f, 0, 0, 0, step.getLength(), step.getWidth(), step.getHeight(), false);
+			final boolean skipCargoSupport = step.getPlacements().size() > 1;
+			final float minWeight = step.getMinItemWeight();
+			final int length = step.getLength();
+			final int width = step.getWidth();
+			final int height = step.getHeight();
+			ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, 0, 0, 0, length, width, height, step.isNotStackable(), skipCargoSupport);
 			if (area != null) {
 				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
 				return confirmStep(step, area, placedSteps);
 			} else {
 				//We will try to find place for rotated step (length becomes width and vise versa)
-				area = MatrixUtil.getFreeArea(placedSteps, source, step.getMinItemWeight(), 1.08f, 0, 0, 0, step.getWidth(), step.getLength(), step.getHeight(), false);
+				area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, 0, 0, 0, width, length, height, step.isNotStackable(), skipCargoSupport);
 				if (area != null) {
 					final LoadPlanStepRuntime rotatedStep = step.createRotatedCopy();
 					System.out.println ("Found Area for Rotated step: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
