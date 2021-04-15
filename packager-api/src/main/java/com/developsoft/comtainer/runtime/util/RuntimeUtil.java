@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import com.developsoft.comtainer.rest.dto.CargoGroupDto;
+import com.developsoft.comtainer.rest.dto.ConfigDto;
 import com.developsoft.comtainer.runtime.comparators.CargoItemPlacementDimensionComparator;
 import com.developsoft.comtainer.runtime.model.CargoGroupRuntime;
 import com.developsoft.comtainer.runtime.model.CargoItemPlacementKey;
@@ -30,26 +31,126 @@ public class RuntimeUtil {
 		return result;
 	}
 	
-	public static LoadPlanStepRuntime createStep (final List<LoadPlanStepRuntime> steps, final CargoItemRuntime item, final ContainerAreaRuntime source) {
+	private static boolean calculateSkipZ (final CargoItemRuntime item, final float lightUnstackableWeightLimit) {
+		if (item.getGroup().getSource().isStackGroupOnly()) {
+			return true;
+		}
+		if (!item.getSource().isStackable()) {
+			if (item.getSource().isSelfStackable()) {
+				return true;
+			}
+			if (item.getWeight() > lightUnstackableWeightLimit) {
+				return true;
+			}
+		}
+		return false;
+	}
+	private static LoadPlanStepRuntime confirmNewStep (final CargoItemPlacementRuntime placement, final int startX, final int startY, final int startZ) {
+		final List<CargoItemPlacementRuntime> placements = new ArrayList<CargoItemPlacementRuntime>();
+		placements.add(placement);
+		final LoadPlanStepRuntime step = new LoadPlanStepRuntime(placements, 0, 0, 0, 2);
+		step.confirm();
+		step.updateCoordinates(startX, startY, startZ);
+		System.out.println("Placing single item on X=" + startX + ", Y=" + startY + ", Z="+startZ);
+		placement.print();
+		return step;
+	}
+	
+	public static LoadPlanStepRuntime createStep (final List<LoadPlanStepRuntime> steps, final CargoItemRuntime item, final ContainerAreaRuntime source, final ConfigDto config) {
 		final List<CargoItemPlacementRuntime> itemPlacements = 	item.createPlacements(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false, false);
 		for (final CargoItemPlacementRuntime placement : itemPlacements) {
 			final int length = placement.getLength();
 			final int width = placement.getWidth();
 			final int height = placement.getHeight();
-			final boolean skipZ = !placement.getItem().getSource().isStackable();
-			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, 0, 0, 0, length, width, height, skipZ, false);
+			final boolean skipZ = calculateSkipZ(item, config.getLightUnstackableWeightLimit());
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, 0, 0, 0, length, width, height, skipZ, false, false);
 			if (area != null) {
-				final List<CargoItemPlacementRuntime> placements = new ArrayList<CargoItemPlacementRuntime>();
-				placements.add(placement);
-				final LoadPlanStepRuntime step = new LoadPlanStepRuntime(placements, 0, 0, 0, 2);
-				step.confirm();
-				step.updateCoordinates(area.getStartX(), area.getStartY(), area.getStartZ());
-				System.out.println("Placing single item on X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z="+area.getStartZ());
-				placement.print();
-				return step;
+				return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ());
+			}
+		}
+		
+		if (!item.isPlaced()) {
+			if (!item.getSource().isStackable()) {
+				if (item.getSource().isSelfStackable()) {
+					for (final CargoItemPlacementRuntime placement : itemPlacements) {
+						final List<LoadPlanStepRuntime> samePlacementSteps = findSamePlacements(steps, placement);
+						if (samePlacementSteps.size() > 0) {
+							for (final LoadPlanStepRuntime nextStep : samePlacementSteps) {
+								for (final CargoItemPlacementRuntime nextSamePlacement : nextStep.getPlacements()) {
+									if (placement.getItem().getSource().getId().equals(nextSamePlacement.getItem().getSource().getId())) {
+										if (placement.getOrientation() == nextSamePlacement.getOrientation()) {
+											final int startX = nextStep.getStartX() + nextSamePlacement.getStartX();
+											final int startY = nextStep.getStartY() + nextSamePlacement.getStartY();
+											final int startZ = nextStep.getStartZ() + nextSamePlacement.getStartZ() + nextSamePlacement.getHeight();
+											final int endX = startX + placement.getLength();
+											final int endY = startY + placement.getWidth();
+											final int endZ = startZ + placement.getHeight();
+											if (endZ < source.getMaxHeight() && MatrixUtil.findIntersection(steps, startX, startY, startZ, endX, endY, endZ) == null) {
+												return confirmNewStep(placement, startX, startY, startZ);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			} else if (item.getGroup().getSource().isStackGroupOnly()) {
+				for (final CargoItemPlacementRuntime placement : itemPlacements) {
+					final List<LoadPlanStepRuntime> sameGroupPlacementSteps = findSameGroupPlacements(steps, placement);
+					if (sameGroupPlacementSteps.size() > 0) {
+						for (final LoadPlanStepRuntime nextStep : sameGroupPlacementSteps) {
+							for (final CargoItemPlacementRuntime nextSamePlacement : nextStep.getPlacements()) {
+								if (placement.getItem().getGroup().getSource().getId().equals(nextSamePlacement.getItem().getGroup().getSource().getId())) {
+									if (placement.getLength() <= nextSamePlacement.getLength() && placement.getWidth() <= nextSamePlacement.getWidth()) {
+										final int startX = nextStep.getStartX() + nextSamePlacement.getStartX();
+										final int startY = nextStep.getStartY() + nextSamePlacement.getStartY();
+										final int startZ = nextStep.getStartZ() + nextSamePlacement.getStartZ() + nextSamePlacement.getHeight();
+										final int length = placement.getLength();
+										final int width = placement.getWidth();
+										final int height = placement.getHeight();
+										final ContainerAreaRuntime area = 
+												MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, startX, startY, startZ, length, width, height, true, true, true);
+										if (area != null) {
+											return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ());
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 		return null;
+	}
+	
+	private static List<LoadPlanStepRuntime> findSamePlacements (final List<LoadPlanStepRuntime> steps, final CargoItemPlacementRuntime placement) {
+		final List<LoadPlanStepRuntime> result = new ArrayList<LoadPlanStepRuntime>();
+		for (final LoadPlanStepRuntime step : steps) {
+			for (final CargoItemPlacementRuntime stepPlacement : step.getPlacements()) {
+				if (placement.getItem().getSource().getId().equals(stepPlacement.getItem().getSource().getId())) {
+					if (placement.getOrientation() == stepPlacement.getOrientation()) {
+						result.add(step);
+						break;
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	private static List<LoadPlanStepRuntime> findSameGroupPlacements (final List<LoadPlanStepRuntime> steps, final CargoItemPlacementRuntime placement) {
+		final List<LoadPlanStepRuntime> result = new ArrayList<LoadPlanStepRuntime>();
+		for (final LoadPlanStepRuntime step : steps) {
+			for (final CargoItemPlacementRuntime stepPlacement : step.getPlacements()) {
+				if (placement.getItem().getGroup().getSource().getId().equals(stepPlacement.getItem().getGroup().getSource().getId())) {
+					result.add(step);
+					break;
+				}
+			}
+		}
+		return result;
 	}
 	
 	public static LoadPlanStepRuntime createStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime area, final int targetSum) {

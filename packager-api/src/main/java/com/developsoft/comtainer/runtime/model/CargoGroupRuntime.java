@@ -21,10 +21,12 @@ public class CargoGroupRuntime {
 		initItems();
 	}
 	
-	private void initItems() {
+	public List<CargoItemRuntime> initItems() {
 		if (source.getItems() != null) {
+			this.items.clear();
 			source.getItems().forEach(source -> this.items.add(new CargoItemRuntime(source, this)));
 		}
+		return this.items;
 	}
 	
 	public boolean isPlaced() {

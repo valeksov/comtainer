@@ -44,6 +44,9 @@ public class LoadPlanStepRuntime {
 			if (!placement.getItem().getSource().isStackable()) {
 				return true;
 			}
+			if (placement.getItem().getGroup().getSource().isStackGroupOnly()) {
+				return true;
+			}
 		}
 		return false;
 	}
