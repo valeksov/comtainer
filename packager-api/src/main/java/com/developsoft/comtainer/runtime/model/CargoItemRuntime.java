@@ -1,7 +1,9 @@
 package com.developsoft.comtainer.runtime.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.developsoft.comtainer.rest.dto.CargoItemDto;
 
@@ -45,28 +47,31 @@ public class CargoItemRuntime {
 		}
 		result.add(item);
 	}
-	
+	private String getKey (final CargoItemPlacementRuntime item) {
+		return item.getLength() + "-" + item.getWidth() + "-" + item.getHeight();
+	}
 	public List<CargoItemPlacementRuntime> createPlacements(final int maxLength, final int maxWidth, final int maxHeight, 
 																	final boolean fixedLength, final boolean fixedWidth, final boolean fixedHeight) {
 		final List<CargoItemPlacementRuntime> result = new ArrayList<CargoItemPlacementRuntime>();
+		final Set<String> dimensionsSet = new HashSet<String>();
 		for (int i = 0; i < getRemainingQuantity(); i++) {
-			addItem(result, new CargoItemPlacementRuntime(this, 1), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
+			final CargoItemPlacementRuntime orinentation1 = new CargoItemPlacementRuntime(this, 1);
+			dimensionsSet.add(getKey(orinentation1));
+			addItem(result, orinentation1, maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
 			if (!getSource().getLength().equals(getSource().getWidth())) {
-				addItem(result, new CargoItemPlacementRuntime(this, 2), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
+				final CargoItemPlacementRuntime orinentation2 = new CargoItemPlacementRuntime(this, 2);
+				dimensionsSet.add(getKey(orinentation2));
+				addItem(result, orinentation2, maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
 			}
 			if(getSource().isRotatable()) {
-				if (!getSource().getHeight().equals(getSource().getWidth())) {
-					addItem(result, new CargoItemPlacementRuntime(this, 3), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
-					if (!getSource().getLength().equals(getSource().getHeight())) {
-						addItem(result, new CargoItemPlacementRuntime(this, 4), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
+				for (int o = 3; o < 7; o++) {
+					final CargoItemPlacementRuntime orinentationO = new CargoItemPlacementRuntime(this, o);
+					final String keyO = getKey(orinentationO);
+					if (!dimensionsSet.contains(keyO)) {
+						dimensionsSet.add(keyO);
+						addItem(result, orinentationO, maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
 					}
-				}
-				if (!getSource().getLength().equals(getSource().getHeight())) {
-					addItem(result, new CargoItemPlacementRuntime(this, 5), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
-					if (!getSource().getHeight().equals(getSource().getWidth())) {
-						addItem(result, new CargoItemPlacementRuntime(this, 6), maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);
-					}
-				}
+				}	
 			}
 		}
 		return result;
