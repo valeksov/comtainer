@@ -93,7 +93,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
                         Visuals.WireBoxVisual3D wireBoxFrame = null;
                         if (!string.IsNullOrEmpty(item.color))
                         {
-                            Color color = ColorTranslator.FromHtml(item.color);
+                            Color color = ColorTranslator.FromHtml("#" + item.color);
                             var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
                             DrawBox(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, mediaColor);
                             wireBoxFrame = DrawFrame(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, borderColor);
