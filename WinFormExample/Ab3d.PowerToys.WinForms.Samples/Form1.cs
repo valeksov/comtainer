@@ -78,7 +78,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
             {
                 //draw container
                 _viewport3D.Children.Clear();
-                DrawContainer(0.0, 0.0, 0.0, container.length / 10, container.width / 10, container.height / 10);
+                DrawContainer(0.0, 0.0, 0.0, container.length / 10, container.height / 10, container.width / 10);
 
                 var borderColor = System.Windows.Media.Color.FromRgb(255, 255, 0);  //yellow
                 int randomColorIndex = 0;
@@ -89,25 +89,24 @@ namespace Ab3d.PowerToys.WinForms.Samples
                 {
                     foreach (var item in loadPlanStep.items)
                     {
-                        //startY and startZ are the other way around
                         Visuals.WireBoxVisual3D wireBoxFrame = null;
                         if (!string.IsNullOrEmpty(item.color))
                         {
                             Color color = ColorTranslator.FromHtml("#" + item.color);
                             var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
-                            DrawBox(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, mediaColor);
-                            wireBoxFrame = DrawFrame(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, borderColor);
+                            DrawBox(item.startX / 10, item.startY / 10, item.startZ / 10, item.length / 10, item.height / 10, item.width / 10, mediaColor);
+                            wireBoxFrame = DrawFrame(item.startX / 10,  item.startY / 10, item.startZ / 10, item.length / 10, item.height / 10, item.width / 10, borderColor);
                         }
                         else
                         {
                             string colorStr = allColors.ElementAt(randomColorIndex).Value;
                             Color color = ColorTranslator.FromHtml(colorStr);
                             var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
-                            DrawBox(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, mediaColor);
-                            wireBoxFrame = DrawFrame(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, borderColor);
+                            DrawBox(item.startX / 10, item.startY / 10, item.startZ / 10, item.length / 10,  item.height / 10, item.width / 10, mediaColor);
+                            wireBoxFrame = DrawFrame(item.startX / 10, item.startY / 10, item.startZ / 10, item.length / 10, item.height / 10, item.width / 10, borderColor);
                         }
 
-                        MarkSideUp(item.orientation, item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10);
+                        MarkSideUp(item.orientation, item.startX / 10, item.startY / 10, item.startZ / 10, item.length / 10, item.height / 10, item.width / 10);
                         wireBoxFrames.Add(wireBoxFrame);
                     }
 
