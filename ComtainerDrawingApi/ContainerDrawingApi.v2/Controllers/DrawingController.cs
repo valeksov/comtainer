@@ -40,10 +40,18 @@ namespace ContainerDrawingApi.v2.Controllers
         [HttpPost]
         [Route("post")]
         [STAThread]
-        public async void Draw([FromBody]RootJsonObject request)
+        public void Draw([FromBody]RootJsonObject request)
         {
-            Thread thread = new Thread(
-                delegate () //Use a delegate here instead of a new ThreadStart
+            Thread thread = GetDrawThread(request);
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            thread.Join();
+        }
+
+        private Thread GetDrawThread(RootJsonObject request)
+        {
+            return new Thread(
+                delegate ()
                 {
                     _viewport3D = new Viewport3D();
                     _drawingUtility = new DrawingUtility(_viewport3D);
@@ -102,10 +110,11 @@ namespace ContainerDrawingApi.v2.Controllers
                         }
                     }
                 }
-            );
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            thread.Join();
+            )
+            {
+                IsBackground = false,
+                Priority = ThreadPriority.Highest
+            };
         }
 
         private static string readJsonRequest(string fileName)
