@@ -192,12 +192,12 @@ namespace Ab3d.PowerToys.WinForms.Samples
             switch (orientation)
             {
                 case 1:
-                    startPoint = new Point3D(startX + length / 2, startZ + height, startY + width / 8);
-                    endPoint = new Point3D(startX + length / 2, startZ + height, startY + width - width / 8);
-                    break;
-                case 2:
                     startPoint = new Point3D(startX + length / 8, startZ + height, startY + width / 2);
                     endPoint = new Point3D(startX + length - length / 8, startZ + height, startY + width / 2);
+                    break;
+                case 2:
+                    startPoint = new Point3D(startX + length / 2, startZ + height, startY + width / 8);
+                    endPoint = new Point3D(startX + length / 2, startZ + height, startY + width - width / 8);
                     break;
                 case 3:
                     startPoint = new Point3D(startX + length / 8, startZ + height / 2, startY + width);
