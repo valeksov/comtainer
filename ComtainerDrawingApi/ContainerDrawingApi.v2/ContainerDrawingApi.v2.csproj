@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0-windows7.0</TargetFramework>
+	<UseWPF>true</UseWPF>
     <UserSecretsId>5a89c869-c939-480a-a155-582cc347c028</UserSecretsId>
     <OutputType>WinExe</OutputType>
     <StartupObject>ContainerDrawingApi.v2.Program</StartupObject>

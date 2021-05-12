@@ -13,11 +13,11 @@ using Ab3d.Common.Cameras;
 using Ab3d.Common.EventManager3D;
 using Ab3d.Controls;
 using Ab3d.Utilities;
-using System.Windows.Controls;
-using System.Windows.Media.Media3D;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Windows.Controls;
+using Ab3d.Visuals;
 
 namespace ContainerDrawingApi.v2.Controllers
 {
@@ -35,74 +35,69 @@ namespace ContainerDrawingApi.v2.Controllers
         {
             _logger = logger;
             _drawingUtility = new DrawingUtility(_viewport3D);
-            var windowsBaseAssembly = Assembly.Load("SampleAssembly, Version=1.0.2004.0, Culture=neutral, PublicKeyToken=8744b20f8da049e3");
-        }
+          }
 
 
         [HttpPost]
         [Route("post")]
         public async void Draw([FromBody]RootJsonObject request)
         {
-            // The event manager will be used to manage the mouse events on our boxes
-            _eventManager3D = new EventManager3D(_viewport3D);
-
             string colorsBody = readJsonRequest("Color.json");
             var allColors = JsonConvert.DeserializeObject<Dictionary<string, string>>(colorsBody);
-
 
             foreach (var container in request.containers)
             {
                 //draw container
-                _drawingUtility.DrawContainer(0.0, 0.0, 0.0, container.length / 10, container.width / 10, container.height / 10);
-                int randomColorIndex = 0;
+                if (_viewport3D != null && _viewport3D.Children != null)
+                {
+                    _viewport3D.Children.Clear();
+                }
 
-                var counter = 1;
+                _drawingUtility.DrawContainer(0.0, 0.0, 0.0, container.length / 10, container.height / 10, container.width / 10);
+
+                var borderColor = System.Windows.Media.Color.FromRgb(255, 255, 0);  //yellow
+                int randomColorIndex = 0;
+                var wireBoxFrames = new List<WireBoxVisual3D>();
+                int counter = 0;
+
                 foreach (var loadPlanStep in container.loadPlan.loadPlanSteps)
                 {
-                    var borderColor = System.Windows.Media.Color.FromRgb(255, 255, 0);  //yellow
-
                     foreach (var item in loadPlanStep.items)
                     {
-                        //startY and startZ are the other way around
-                        Ab3d.Visuals.WireBoxVisual3D wireBoxFrame = null;
+                        _drawingUtility.ConvertItemMeasurementsInCentimeters(item);
+                        WireBoxVisual3D wireBoxFrame = null;
                         if (!string.IsNullOrEmpty(item.color))
                         {
-                            Color color = ColorTranslator.FromHtml(item.color);
+                            Color color = ColorTranslator.FromHtml("#" + item.color);
                             var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
-                            _drawingUtility.DrawBox(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, mediaColor);
-                            wireBoxFrame = _drawingUtility.DrawFrame(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, borderColor);
+                            _drawingUtility.DrawBox(item.startX, item.startY, item.startZ, item.length, item.height, item.width, mediaColor);
+                            wireBoxFrame = _drawingUtility.DrawFrame(item.startX, item.startY, item.startZ, item.length, item.height, item.width, borderColor);
                         }
                         else
                         {
                             string colorStr = allColors.ElementAt(randomColorIndex).Value;
                             Color color = ColorTranslator.FromHtml(colorStr);
                             var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
-                            _drawingUtility.DrawBox(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, mediaColor);
-                            wireBoxFrame = _drawingUtility.DrawFrame(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10, borderColor);
-
-
-                            if (randomColorIndex < allColors.Count - 1)
-                            {
-                                randomColorIndex++;
-                            }
-                            else
-                            {
-                                randomColorIndex = 0;
-                            }
+                            _drawingUtility.DrawBox(item.startX, item.startY, item.startZ, item.length, item.height, item.width, mediaColor);
+                            wireBoxFrame = _drawingUtility.DrawFrame(item.startX, item.startY, item.startZ, item.length, item.height, item.width, borderColor);
                         }
 
-                        if (item.orientation == 1 || item.orientation == 2)
-                        {
-                            _drawingUtility.MarkSideUp(item.startX / 10, item.startZ / 10, item.startY / 10, item.length / 10, item.width / 10, item.height / 10);
-                        }
-
-                      //  _drawingUtility.exportToPng(container.name + "_" + counter);
-                        counter++;
-                        wireBoxFrame.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0);
+                        _drawingUtility.MarkSideUp(item.orientation, item.startX, item.startY, item.startZ, item.length, item.height, item.width);
+                        wireBoxFrames.Add(wireBoxFrame);
                     }
-                }
 
-                break;
+                    string pictureName = String.Concat(counter, '_', loadPlanStep.id.Substring(0, 8));
+                    _drawingUtility.exportToPng(container.name, pictureName);
+                    wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   //remove highlighted border
+                    wireBoxFrames = new List<WireBoxVisual3D>();
+                    counter++;
+
+
+                    if (randomColorIndex < allColors.Count - 1)
+                        randomColorIndex++;
+                    else
+                        randomColorIndex = 0;
+                }
             }
         }
 

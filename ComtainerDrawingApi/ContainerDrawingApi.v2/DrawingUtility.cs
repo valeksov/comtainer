@@ -10,6 +10,8 @@ using Ab3d.Cameras;
 using Ab3d.Common.Cameras;
 using Ab3d.Common.EventManager3D;
 using Ab3d.Controls;
+using ContainerDrawingApi.v2.Models.LoadPlanObjects;
+using Ab3d.Visuals;
 
 namespace ContainerDrawingApi
 {
@@ -20,6 +22,16 @@ namespace ContainerDrawingApi
         public DrawingUtility(Viewport3D viewport3D)
         {
             _viewport3D = viewport3D;
+        }
+
+        public void ConvertItemMeasurementsInCentimeters(LoadPlanItem item)
+        {
+            item.startX = item.startX / 10;
+            item.startY = item.startY / 10;
+            item.startZ = item.startZ / 10;
+            item.width = item.width / 10;
+            item.height = item.height / 10;
+            item.length = item.length / 10;
         }
 
         public void DrawContainer(double startX, double startY, double startZ, double length, double height, double width)
@@ -35,7 +47,7 @@ namespace ContainerDrawingApi
         }
 
 
-        public Ab3d.Visuals.WireBoxVisual3D DrawFrame(double startX, double startY, double startZ, double length, double height, double width, System.Windows.Media.Color color)
+        public WireBoxVisual3D DrawFrame(double startX, double startY, double startZ, double length, double height, double width, System.Windows.Media.Color color)
         {
             var centerPoint = new Point3D(startX + length / 2, startZ + height / 2, startY + width / 2);
 
@@ -68,28 +80,67 @@ namespace ContainerDrawingApi
             _viewport3D.Children.Add(innerBox);
         }
 
-        public void MarkSideUp(double startX, double startY, double startZ, double length, double height, double width)
+        public void MarkSideUp(int orientation, double startX, double startY, double startZ, double length, double height, double width)
         {
-            //mark side up
             var sideUpLine = new Ab3d.Visuals.LineVisual3D();
-            var startPoint = new Point3D(startX + length / 8, startZ + height, startY + width / 2);
-            sideUpLine.StartPosition = startPoint;
+            Nullable<Point3D> startPoint = null;
+            Nullable<Point3D> endPoint = null;
 
-            startPoint.X += (length - length / 4);
-            sideUpLine.EndPosition = startPoint;
+            switch (orientation)
+            {
+                case 1:
+                    startPoint = new Point3D(startX + length / 8, startZ + height, startY + width / 2);
+                    endPoint = new Point3D(startX + length - length / 8, startZ + height, startY + width / 2);
+                    break;
+                case 2:
+                    startPoint = new Point3D(startX + length / 2, startZ + height, startY + width / 8);
+                    endPoint = new Point3D(startX + length / 2, startZ + height, startY + width - width / 8);
+                    break;
+                case 3:
+                    startPoint = new Point3D(startX + length / 8, startZ + height / 2, startY + width);
+                    endPoint = new Point3D(startX + length - length / 8, startZ + height / 2, startY + width);
+                    break;
+                case 4:
+                    startPoint = new Point3D(startX + length, startZ + height / 2, startY + width / 8);
+                    endPoint = new Point3D(startX + length, startZ + height / 2, startY + width - width / 8);
+                    break;
+                case 5:
+                    startPoint = new Point3D(startX + length / 2, startZ + height / 8, startY + width);
+                    endPoint = new Point3D(startX + length / 2, startZ + height - height / 8, startY + width);
+                    break;
+                case 6:
+                    startPoint = new Point3D(startX + length, startZ + height / 8, startY + width / 2);
+                    endPoint = new Point3D(startX + length, startZ + height - height / 8, startY + width / 2);
+                    break;
+            }
+
+
+            if (startPoint.HasValue && endPoint.HasValue)
+            {
+                sideUpLine.StartPosition = startPoint.Value;
+                sideUpLine.EndPosition = endPoint.Value;
+            }
 
             _viewport3D.Children.Add(sideUpLine);
         }
 
-        private void exportToPng(string fileName)
+        public void exportToPng(string containerName, string imageName)
         {
-            //var bitmap = BitmapRendering.RenderToBitmap(_viewport3D, 1920, 1080);
-            //using (var fileStream = new FileStream($"\\output\\{fileName}.png", FileMode.Create))
-            //{
-            //    BitmapEncoder encoder = new PngBitmapEncoder();
-            //    encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            //    encoder.Save(fileStream);
-            //}
+            var bitmap = BitmapRendering.RenderToBitmap(_viewport3D, 1920, 1080);
+
+            var subPath = $".\\output\\{containerName.Replace(' ', '_')}";
+            bool exists = Directory.Exists(subPath);
+            if (!exists)
+            {
+                Directory.CreateDirectory(subPath);
+            }
+
+            using (var fileStream = new FileStream($"{subPath}\\{imageName}.png", FileMode.Create))
+            {
+                BitmapEncoder encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                encoder.Save(fileStream);
+            }
         }
     }
 }
