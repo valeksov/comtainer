@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using HorizontalAlignment = System.Windows.HorizontalAlignment;
 using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
 using Point = System.Drawing.Point;
+using ContainerDrawingApi.Models.LoadPlanObjects;
 
 namespace Ab3d.PowerToys.WinForms.Samples
 {
@@ -89,24 +90,25 @@ namespace Ab3d.PowerToys.WinForms.Samples
                 {
                     foreach (var item in loadPlanStep.items)
                     {
+                        ConvertItemMeasurementsInCentimeters(item);
                         Visuals.WireBoxVisual3D wireBoxFrame = null;
                         if (!string.IsNullOrEmpty(item.color))
                         {
                             Color color = ColorTranslator.FromHtml("#" + item.color);
                             var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
-                            DrawBox(item.startX / 10, item.startY / 10, item.startZ / 10, item.length / 10, item.height / 10, item.width / 10, mediaColor);
-                            wireBoxFrame = DrawFrame(item.startX / 10,  item.startY / 10, item.startZ / 10, item.length / 10, item.height / 10, item.width / 10, borderColor);
+                            DrawBox(item.startX, item.startY, item.startZ, item.length, item.height, item.width, mediaColor);
+                            wireBoxFrame = DrawFrame(item.startX, item.startY, item.startZ, item.length, item.height, item.width, borderColor);
                         }
                         else
                         {
                             string colorStr = allColors.ElementAt(randomColorIndex).Value;
                             Color color = ColorTranslator.FromHtml(colorStr);
                             var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
-                            DrawBox(item.startX / 10, item.startY / 10, item.startZ / 10, item.length / 10,  item.height / 10, item.width / 10, mediaColor);
-                            wireBoxFrame = DrawFrame(item.startX / 10, item.startY / 10, item.startZ / 10, item.length / 10, item.height / 10, item.width / 10, borderColor);
+                            DrawBox(item.startX, item.startY, item.startZ, item.length,  item.height, item.width, mediaColor);
+                            wireBoxFrame = DrawFrame(item.startX, item.startY, item.startZ, item.length, item.height, item.width, borderColor);
                         }
 
-                        MarkSideUp(item.orientation, item.startX / 10, item.startY / 10, item.startZ / 10, item.length / 10, item.height / 10, item.width / 10);
+                        MarkSideUp(item.orientation, item.startX, item.startY, item.startZ, item.length, item.height, item.width);
                         wireBoxFrames.Add(wireBoxFrame);
                     }
 
@@ -125,6 +127,15 @@ namespace Ab3d.PowerToys.WinForms.Samples
             }
         }
 
+        private void ConvertItemMeasurementsInCentimeters(LoadPlanItem item)
+        {
+            item.startX = item.startX / 10;
+            item.startY = item.startY / 10;
+            item.startZ = item.startZ / 10;
+            item.width = item.width / 10;
+            item.height = item.height / 10;
+            item.length = item.length / 10;
+        }
 
         public void DrawContainer(double startX, double startY, double startZ, double length, double height, double width)
         {
