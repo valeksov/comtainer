@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0-windows7.0</TargetFramework>
+	<UseWindowsForms>true</UseWindowsForms>   
 	<UseWPF>true</UseWPF>
     <UserSecretsId>5a89c869-c939-480a-a155-582cc347c028</UserSecretsId>
     <OutputType>WinExe</OutputType>
@@ -24,10 +25,6 @@
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.RollingFile" Version="3.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    
   </ItemGroup>
 
 
