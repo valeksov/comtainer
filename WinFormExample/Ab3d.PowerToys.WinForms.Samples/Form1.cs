@@ -290,7 +290,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
             // We need a root grid because we will host more than one control
             _rootGrid = new Grid();
-            _rootGrid.Background = System.Windows.Media.Brushes.White;
+            _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
 
 
             // Viewport3D is a WPF control that can show 3D graphics
