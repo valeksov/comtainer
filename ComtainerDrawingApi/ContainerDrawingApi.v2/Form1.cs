@@ -38,18 +38,16 @@ namespace Ab3d.PowerToys.WinForms.Samples
         public Form1(RootJsonObject request)
         {
             this.request = request;
-
             //this.TopMost = true;
-            //this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
             InitializeComponent();
           
             SetUpWpf3D();
+            this.Update();   //causes the form to redraw and call the paint event handler
         }
 
-        private void Form1_Shown(object sender, EventArgs e)
+        private void Form1_Paint(object sender, EventArgs e)
         {
-            Thread.Sleep(500);   //without the delay, sometimes it export pngs as entirely black pictures
             Setup3DObjects(request);
         }
 
