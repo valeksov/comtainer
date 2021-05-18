@@ -142,5 +142,6 @@ namespace ContainerDrawingApi
                 encoder.Save(fileStream);
             }
         }
+
     }
 }

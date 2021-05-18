@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Threading;
 using Ab3d.PowerToys.WinForms.Samples;
+using System.Threading.Tasks;
 
 namespace ContainerDrawingApi.v2.Controllers
 {
@@ -14,26 +15,26 @@ namespace ContainerDrawingApi.v2.Controllers
     public class DrawingController : ControllerBase
     {
         private ILogger<DrawingController> _logger;
-        private DrawingUtility _drawingUtility;
 
         public DrawingController(ILogger<DrawingController> logger)
         {
             _logger = logger;
         }
 
-
         [HttpPost]
         [Route("post")]
         [STAThread]
         public void Draw([FromBody]RootJsonObject request)
         {
-            Thread thread = GetDrawThread(request);
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            thread.Join();
+            Task.Factory.StartNew(() =>
+            {
+                var thread1 = RunForm(request);
+                thread1.SetApartmentState(ApartmentState.STA);
+                thread1.Start();
+            });
         }
 
-        private Thread GetDrawThread(RootJsonObject request)
+        private Thread RunForm(RootJsonObject request)
         {
             return new Thread(
                 delegate ()
@@ -42,25 +43,12 @@ namespace ContainerDrawingApi.v2.Controllers
                     System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
                     var form1 = new Form1(request);
                     System.Windows.Forms.Application.Run(form1);
-
-                    Thread.Sleep(2000);
-                    form1.Setup3DObjects(request);
                 }
             )
             {
                 IsBackground = false,
                 Priority = ThreadPriority.Highest
             };
-        }
-
-        private static string readJsonRequest(string fileName)
-        {
-            using (StreamReader r = new StreamReader(fileName))
-            {
-
-                string json = r.ReadToEnd();
-                return json;
-            }
         }
 
         [HttpGet]

@@ -1,20 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
-using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using Ab3d.Cameras;
 using Ab3d.Common.Cameras;
-using Ab3d.Common.EventManager3D;
 using Ab3d.Controls;
 using Ab3d.Utilities;
 using ContainerDrawingApi;
@@ -29,37 +24,34 @@ namespace Ab3d.PowerToys.WinForms.Samples
 {
     public partial class Form1 : Form
     {
-        // This sample shows how easy is to use WPF inside WinForms application.
-        // It also shows how easy is to create interesting 3D scene with Ab3d.PowerToys library.
-
         private Viewport3D _viewport3D;
         private TargetPositionCamera _targetPositionCamera;
         private MouseCameraController _mouseCameraController;
         private Grid _rootGrid;
         private EventManager3D _eventManager3D;
 
-        private bool _isSelectedBoxClicked;
-
-        private double _totalClickedHeight;
-
         private DiffuseMaterial _normalMaterial = new DiffuseMaterial(System.Windows.Media.Brushes.Silver);
-        private DiffuseMaterial _selectedMaterial = new DiffuseMaterial(System.Windows.Media.Brushes.Orange);
-        private DiffuseMaterial _clickedMaterial = new DiffuseMaterial(System.Windows.Media.Brushes.Red);
 
-        RootJsonObject request;
+        private RootJsonObject request;
+
 
         public Form1(RootJsonObject request)
         {
             this.request = request;
+
             //this.TopMost = true;
             //this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
-
             InitializeComponent();
-
+          
             SetUpWpf3D();
         }
 
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            Thread.Sleep(500);   //without the delay, sometimes it export pngs as entirely black pictures
+            Setup3DObjects(request);
+        }
 
         public void Setup3DObjects(RootJsonObject request)
         {
@@ -108,7 +100,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
                     }
 
                     string pictureName = String.Concat(counter, '_', loadPlanStep.id.Substring(0, 8));
-                    exportToPng(container.name, pictureName);
+                    _drawingUtility.exportToPng(container.name, pictureName);
                     wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   //remove highlighted border
                     wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
                     counter++;
@@ -122,8 +114,10 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
                 wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   //remove highlighted border
                 wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
-                exportToPng(container.name, container.name);
+                _drawingUtility.exportToPng(container.name, container.name);
             }
+
+            this.Close();   //closes the form after finish execution
         }
 
         private void ConvertItemMeasurementsInCentimeters(LoadPlanItem item)
@@ -135,63 +129,6 @@ namespace Ab3d.PowerToys.WinForms.Samples
             item.height = item.height / 10;
             item.length = item.length / 10;
         }
-
-
-        private void BoxOnMouseClick(object sender, MouseButton3DEventArgs mouseButton3DEventArgs)
-        {
-            // HitObject is our BoxVisual3D
-            var boxVisual3D = mouseButton3DEventArgs.HitObject as Ab3d.Visuals.BoxVisual3D;
-            if (boxVisual3D == null)
-                return; // This should not happen
-
-            // Toggle clicked and normal material
-            if (!_isSelectedBoxClicked)
-            {
-                boxVisual3D.Material = _clickedMaterial;
-                _isSelectedBoxClicked = true;
-
-                _totalClickedHeight += boxVisual3D.Size.Y;
-            }
-            else
-            {
-                boxVisual3D.Material = _normalMaterial;
-                _isSelectedBoxClicked = false;
-
-                _totalClickedHeight -= boxVisual3D.Size.Y;
-            }
-
-            UpdateTotalClickedHeightText();
-        }
-
-        private void BoxOnMouseEnter(object sender, Mouse3DEventArgs mouse3DEventArgs)
-        {
-            var boxVisual3D = mouse3DEventArgs.HitObject as Ab3d.Visuals.BoxVisual3D;
-            if (boxVisual3D == null)
-                return; // This should not happen
-
-            // Set _isSelectedBoxClicked to true if the selected box is clicked (red) - this will be used on MouseLeave
-            _isSelectedBoxClicked = ReferenceEquals(boxVisual3D.Material, _clickedMaterial);
-
-            boxVisual3D.Material = _selectedMaterial;
-        }
-
-        private void BoxOnMouseLeave(object sender, Mouse3DEventArgs mouse3DEventArgs)
-        {
-            var boxVisual3D = mouse3DEventArgs.HitObject as Ab3d.Visuals.BoxVisual3D;
-            if (boxVisual3D == null)
-                return; // This should not happen
-
-            if (_isSelectedBoxClicked)
-                boxVisual3D.Material = _clickedMaterial;
-            else
-                boxVisual3D.Material = _normalMaterial;
-        }
-
-        private void UpdateTotalClickedHeightText()
-        {
-            textBox1.Text = string.Format("Total clicked height: {0:0}\r\n{1}", _totalClickedHeight, textBox1.Text);
-        }
-
 
         private void SetUpWpf3D()
         {
@@ -209,13 +146,6 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
 
             // Specify TargetPositionCamera that will show our 3D scene
-
-            //<cameras:TargetPositionCamera Name="Camera1"
-            //                    Heading="30" Attitude="-20" Bank="0" 
-            //                    Distance="1300" TargetPosition="0 0 0" 
-            //                    ShowCameraLight="Always"
-            //                    TargetViewport3D="{Binding ElementName=MainViewport}"/>
-
             _targetPositionCamera = new Ab3d.Cameras.TargetPositionCamera()
             {
                 TargetPosition = new Point3D(0, 0, 0),
@@ -232,13 +162,6 @@ namespace Ab3d.PowerToys.WinForms.Samples
             // Set rotate to right mouse button
             // and move to CRTL + right mouse button
             // Left mouse button is left for clicking on the 3D objects
-
-            //<controls:MouseCameraController Name="MouseCameraController1"
-            //                                RotateCameraConditions="RightMouseButtonPressed"
-            //                                MoveCameraConditions="ControlKey, RightMouseButtonPressed" 
-            //                                EventsSourceElement="{Binding ElementName=RootViewportBorder}"
-            //                                TargetCamera="{Binding ElementName=Camera1}"/>
-
             _mouseCameraController = new Ab3d.Controls.MouseCameraController()
             {
                 RotateCameraConditions = MouseCameraController.MouseAndKeyboardConditions.RightMouseButtonPressed,
@@ -251,10 +174,6 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
 
             // Show buttons that can be used to rotate and move the camera
-
-            //<controls:CameraControlPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="5" Width="225" Height="75" ShowMoveButtons="True"
-            //                                TargetCamera="{Binding ElementName=Camera1}"/>
-
             var cameraControlPanel = new Ab3d.Controls.CameraControlPanel()
             {
                 VerticalAlignment = VerticalAlignment.Bottom,
@@ -277,31 +196,12 @@ namespace Ab3d.PowerToys.WinForms.Samples
         {
             string fileName = "manualExport";
             string container = "Current";
-            exportToPng(container, fileName);
-        }
-
-        private void exportToPng(string containerName, string imageName)
-        {
-            var bitmap = BitmapRendering.RenderToBitmap(_viewport3D, 1920, 1080);
-
-            var subPath = $".\\output\\{containerName.Replace(' ', '_')}";
-            bool exists = Directory.Exists(subPath);
-            if (!exists)
-            {
-                Directory.CreateDirectory(subPath);
-            }
-               
-            using (var fileStream = new FileStream($"{subPath}\\{imageName}.png", FileMode.Create))
-            {
-                BitmapEncoder encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                encoder.Save(fileStream);
-            }
+            var drawingUtility = new DrawingUtility(_viewport3D);
+            drawingUtility.exportToPng(container, fileName);
         }
 
         private void animateButton_Click(object sender, EventArgs e)
         {
-            //ToggleCameraAnimation();
             Setup3DObjects(this.request);
         }
 
@@ -309,23 +209,6 @@ namespace Ab3d.PowerToys.WinForms.Samples
         {
             foreach (var boxVisual3D in _viewport3D.Children.OfType<Ab3d.Visuals.BoxVisual3D>())
                 boxVisual3D.Material = _normalMaterial;
-
-            _totalClickedHeight = 0;
-            UpdateTotalClickedHeightText();
-        }
-
-        private void ToggleCameraAnimation()
-        {
-            if (_targetPositionCamera.IsRotating)
-            {
-                _targetPositionCamera.StopRotation();
-                loadContainerButton.Text = "Start animation";
-            }
-            else
-            {
-                _targetPositionCamera.StartRotation(10, 0); // animate the camera with changing heading for 10 degrees in one second
-                loadContainerButton.Text = "Stop animation";
-            }
         }
 
         private static string readJsonRequest(string fileName)
