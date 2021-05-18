@@ -7,6 +7,7 @@ using System.IO;
 using System.Threading;
 using Ab3d.PowerToys.WinForms.Samples;
 using System.Threading.Tasks;
+using System.IO.Compression;
 
 namespace ContainerDrawingApi.v2.Controllers
 {
@@ -55,13 +56,16 @@ namespace ContainerDrawingApi.v2.Controllers
         [Route("get")]
         public FileResult Get([FromQuery]string name)
         {
-            HttpContext.Response.ContentType = "application/pdf";
-            FileContentResult result = new FileContentResult(System.IO.File.ReadAllBytes(@"output\" + name), "application/octet-stream")
-            {
-                FileDownloadName = "name"
-            };
+            string startPath = $".\\output\\{ name }";
+            string zipPath = ".\\output\\result.zip";
 
-            return result;
+            if (System.IO.File.Exists(zipPath))
+            {
+                System.IO.File.Delete(zipPath);
+            }
+
+            ZipFile.CreateFromDirectory(startPath, zipPath);
+            return null;
         }
 
     }
