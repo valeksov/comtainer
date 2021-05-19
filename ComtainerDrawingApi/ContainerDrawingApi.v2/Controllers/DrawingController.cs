@@ -54,7 +54,7 @@ namespace ContainerDrawingApi.v2.Controllers
 
         [HttpGet]
         [Route("get")]
-        public FileResult Get([FromQuery]string name)
+        public ZipArchive Get([FromQuery]string name)
         {
             string startPath = $".\\output\\{ name }";
             string zipPath = ".\\output\\result.zip";
@@ -65,7 +65,8 @@ namespace ContainerDrawingApi.v2.Controllers
             }
 
             ZipFile.CreateFromDirectory(startPath, zipPath);
-            return null;
+            var archive = ZipFile.OpenRead(zipPath);
+            return archive;
         }
 
     }
