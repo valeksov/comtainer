@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace ContainerDrawingApi.v2.Controllers
 {
@@ -68,48 +69,46 @@ namespace ContainerDrawingApi.v2.Controllers
                 System.IO.File.Delete(zipPath);
             }
 
-            //using (var compressedFileStream = new MemoryStream())
-            try
+            var images = new List<byte[]>();
+            foreach (string file in Directory.GetFiles(startPath))
             {
-                var compressedFileStream = new MemoryStream();
-                using (var zipArchive = new ZipArchive(compressedFileStream, ZipArchiveMode.Create, leaveOpen: true))
-                { //<--This is important to keep stream open
-                    //Create a zip entry for each attachment
-                    var zipEntry = zipArchive.CreateEntry("default");
-                    //Get the stream of the attachment
+                byte[] fileByte = System.IO.File.ReadAllBytes(file);
+                images.Add(fileByte);
+            }
 
-                    using (var zipEntryStream = zipEntry.Open())
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                {
+                    for (var i = 0; i < images.Count; i++)
                     {
-                        foreach (string file in Directory.GetFiles(startPath))
+                        var fileInArchive = zipArchive.CreateEntry(i + ".png", CompressionLevel.Optimal);
+                        using (var entryStream = fileInArchive.Open())
+                        using (var fileToCompressStream = new MemoryStream(images[i]))
                         {
-                            byte[] fileByte = System.IO.File.ReadAllBytes(file);
-                            using (var originalFileStream = new MemoryStream(fileByte))
-                            {
-                                //Copy the attachment stream to the zip entry stream
-                                await originalFileStream.CopyToAsync(zipEntryStream);
-                            }
+                            fileToCompressStream.CopyTo(entryStream);
                         }
                     }
                 }
-                // disposal of archive will force data to be written/flushed to memory stream.
-                compressedFileStream.Position = 0;//reset memory stream position.
 
+                using (var fileStream = new FileStream(@"test.zip", FileMode.Create))
+                {
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+                    memoryStream.CopyTo(fileStream);
+                }
+
+                memoryStream.Seek(0, SeekOrigin.Begin);
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StreamContent(compressedFileStream)
+                    Content = new StreamContent(memoryStream)
                 };
-                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
                 response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
                 {
                     FileName = name
                 };
 
                 return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message + ex.StackTrace);
-                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }
         }
 
