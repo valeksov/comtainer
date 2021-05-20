@@ -70,10 +70,12 @@ namespace ContainerDrawingApi.v2.Controllers
             }
 
             var images = new List<byte[]>();
+            var fileNames = new List<string>();
             foreach (string file in Directory.GetFiles(startPath))
             {
                 byte[] fileByte = System.IO.File.ReadAllBytes(file);
                 images.Add(fileByte);
+                fileNames.Add(file.Substring(file.LastIndexOf("\\") + 1));
             }
 
             using (var memoryStream = new MemoryStream())
@@ -82,7 +84,7 @@ namespace ContainerDrawingApi.v2.Controllers
                 {
                     for (var i = 0; i < images.Count; i++)
                     {
-                        var fileInArchive = zipArchive.CreateEntry(i + ".png", CompressionLevel.Optimal);
+                        var fileInArchive = zipArchive.CreateEntry(fileNames[i], CompressionLevel.Optimal);
                         using (var entryStream = fileInArchive.Open())
                         using (var fileToCompressStream = new MemoryStream(images[i]))
                         {
@@ -91,7 +93,7 @@ namespace ContainerDrawingApi.v2.Controllers
                     }
                 }
 
-                using (var fileStream = new FileStream(@"test.zip", FileMode.Create))
+                using (var fileStream = new FileStream(zipPath, FileMode.Create))
                 {
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     memoryStream.CopyTo(fileStream);
