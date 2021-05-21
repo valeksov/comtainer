@@ -113,10 +113,12 @@ namespace Ab3d.PowerToys.WinForms.Samples
                 wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   //remove highlighted border
                 wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
                 _drawingUtility.exportToPng(container.name, container.name);
+                _drawingUtility.zipPngsForContainer(container.name);
             }
 
             this.Close();   //closes the form after finish execution
         }
+
 
         private void ConvertItemMeasurementsInCentimeters(LoadPlanItem item)
         {

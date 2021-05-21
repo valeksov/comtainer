@@ -1,5 +1,4 @@
 ﻿using ContainerDrawingApi.v2.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -7,10 +6,6 @@ using System.IO;
 using System.Threading;
 using Ab3d.PowerToys.WinForms.Samples;
 using System.Threading.Tasks;
-using System.IO.Compression;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Net;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -30,7 +25,7 @@ namespace ContainerDrawingApi.v2.Controllers
         [HttpPost]
         [Route("post")]
         [STAThread]
-        public void Draw([FromBody]RootJsonObject request)
+        public List<string> Draw([FromBody]RootJsonObject request)
         {
             Task.Factory.StartNew(() =>
             {
@@ -38,6 +33,9 @@ namespace ContainerDrawingApi.v2.Controllers
                 thread1.SetApartmentState(ApartmentState.STA);
                 thread1.Start();
             });
+
+            var containerNames = request.containers.Select(x => x.name.Replace(" ", "_"));
+            return containerNames.ToList();
         }
 
         private Thread RunForm(RootJsonObject request)
@@ -59,60 +57,12 @@ namespace ContainerDrawingApi.v2.Controllers
 
         [HttpGet]
         [Route("get")]
-        public async Task<HttpResponseMessage> Get([FromQuery]string name)
+        public async Task<ActionResult> Get([FromQuery]string containerName)
         {
-            string startPath = $".\\output\\{ name }";
-            string zipPath = ".\\output\\result.zip";
-
-            if (System.IO.File.Exists(zipPath))
-            {
-                System.IO.File.Delete(zipPath);
-            }
-
-            var images = new List<byte[]>();
-            var fileNames = new List<string>();
-            foreach (string file in Directory.GetFiles(startPath))
-            {
-                byte[] fileByte = System.IO.File.ReadAllBytes(file);
-                images.Add(fileByte);
-                fileNames.Add(file.Substring(file.LastIndexOf("\\") + 1));
-            }
-
-            using (var memoryStream = new MemoryStream())
-            {
-                using (var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-                {
-                    for (var i = 0; i < images.Count; i++)
-                    {
-                        var fileInArchive = zipArchive.CreateEntry(fileNames[i], CompressionLevel.Optimal);
-                        using (var entryStream = fileInArchive.Open())
-                        using (var fileToCompressStream = new MemoryStream(images[i]))
-                        {
-                            fileToCompressStream.CopyTo(entryStream);
-                        }
-                    }
-                }
-
-                using (var fileStream = new FileStream(zipPath, FileMode.Create))
-                {
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    memoryStream.CopyTo(fileStream);
-                }
-
-                memoryStream.Seek(0, SeekOrigin.Begin);
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StreamContent(memoryStream)
-                };
-                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
-                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-                {
-                    FileName = name
-                };
-
-                return response;
-            }
+            string zipPath = $".\\output\\{containerName}\\{containerName}.zip";
+            var contentType = "application/octet-stream";
+            var bytes = await System.IO.File.ReadAllBytesAsync(zipPath);
+            return File(bytes, contentType, Path.GetFileName(zipPath));
         }
-
     }
 }
