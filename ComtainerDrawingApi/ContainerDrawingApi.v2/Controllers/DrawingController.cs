@@ -25,17 +25,23 @@ namespace ContainerDrawingApi.v2.Controllers
         [HttpPost]
         [Route("post")]
         [STAThread]
-        public List<string> Draw([FromBody]RootJsonObject request)
+        public async Task<ActionResult> Draw([FromBody]RootJsonObject request)
         {
-            Task.Factory.StartNew(() =>
+            await Task.Factory.StartNew(() =>
             {
                 var thread1 = RunForm(request);
                 thread1.SetApartmentState(ApartmentState.STA);
                 thread1.Start();
+
+                //keeps waiting while thread1 finishes
+                while (thread1.IsAlive)
+                {
+                    Thread.Sleep(1000);
+                }
             });
 
             var containerNames = request.containers.Select(x => x.name.Replace(" ", "_"));
-            return containerNames.ToList();
+            return await GetZipFile(containerNames.FirstOrDefault());
         }
 
         private Thread RunForm(RootJsonObject request)
@@ -53,6 +59,14 @@ namespace ContainerDrawingApi.v2.Controllers
                 IsBackground = false,
                 Priority = ThreadPriority.Highest
             };
+        }
+
+        public async Task<ActionResult> GetZipFile(string containerName)
+        {
+            string zipPath = $".\\output\\{containerName}\\{containerName}.zip";
+            var contentType = "application/octet-stream";
+            var bytes = await System.IO.File.ReadAllBytesAsync(zipPath);
+            return File(bytes, contentType, Path.GetFileName(zipPath));
         }
 
         [HttpGet]
