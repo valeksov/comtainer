@@ -145,41 +145,40 @@ namespace ContainerDrawingApi
             }
         }
 
-        public void zipPngsForContainer(string containerName)
+        public void zipPngs(IEnumerable<string> containerNames)
         {
-            var noSpaceContainer = containerName.Replace(" ", "_");
-            string startPath = $".\\output\\{ noSpaceContainer }";
-            string zipPath = $".\\output\\{noSpaceContainer}\\{noSpaceContainer}.zip";
-
-            if (System.IO.File.Exists(zipPath))
-            {
-                System.IO.File.Delete(zipPath);
-            }
-
-            var images = new List<byte[]>();
-            var fileNames = new List<string>();
-            foreach (string file in Directory.GetFiles(startPath))
-            {
-                byte[] fileByte = System.IO.File.ReadAllBytes(file);
-                images.Add(fileByte);
-                fileNames.Add(file.Substring(file.LastIndexOf("\\") + 1));
-            }
-
             using (var memoryStream = new MemoryStream())
             {
                 using (var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                 {
-                    for (var i = 0; i < images.Count; i++)
+                    foreach (var containerName in containerNames)
                     {
-                        var fileInArchive = zipArchive.CreateEntry(fileNames[i], CompressionLevel.Optimal);
-                        using (var entryStream = fileInArchive.Open())
-                        using (var fileToCompressStream = new MemoryStream(images[i]))
+                        var noSpaceContainer = containerName.Replace(" ", "_");
+                        string startPath = $".\\output\\{ noSpaceContainer }";
+
+
+                        var images = new List<byte[]>();
+                        var fileNames = new List<string>();
+                        foreach (string file in Directory.GetFiles(startPath))
                         {
-                            fileToCompressStream.CopyTo(entryStream);
+                            byte[] fileByte = System.IO.File.ReadAllBytes(file);
+                            images.Add(fileByte);
+                            fileNames.Add(file.Substring(file.LastIndexOf("\\") + 1));
+                        }
+
+                        for (var i = 0; i < images.Count; i++)
+                        {
+                            var fileInArchive = zipArchive.CreateEntry($"{containerName}\\{fileNames[i]}", CompressionLevel.Optimal);
+                            using (var entryStream = fileInArchive.Open())
+                            using (var fileToCompressStream = new MemoryStream(images[i]))
+                            {
+                                fileToCompressStream.CopyTo(entryStream);
+                            }
                         }
                     }
                 }
 
+                string zipPath = $".\\output\\all.zip";
                 using (var fileStream = new FileStream(zipPath, FileMode.Create))
                 {
                     memoryStream.Seek(0, SeekOrigin.Begin);

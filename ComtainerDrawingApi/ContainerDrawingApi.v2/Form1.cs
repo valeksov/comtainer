@@ -58,12 +58,12 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
             string colorsBody = readJsonRequest("Color.json");
             var allColors = JsonConvert.DeserializeObject<Dictionary<string, string>>(colorsBody);
+            var _drawingUtility = new DrawingUtility(_viewport3D);
 
             foreach (var container in request.containers)
             {
                 //draw container
                 _viewport3D.Children.Clear();
-                var _drawingUtility = new DrawingUtility(_viewport3D);
                 _drawingUtility.DrawContainer(0.0, 0.0, 0.0, container.length / 10, container.height / 10, container.width / 10);
 
                 var borderColor = System.Windows.Media.Color.FromRgb(255, 255, 0);  //yellow
@@ -113,9 +113,10 @@ namespace Ab3d.PowerToys.WinForms.Samples
                 wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   //remove highlighted border
                 wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
                 _drawingUtility.exportToPng(container.name, container.name);
-                _drawingUtility.zipPngsForContainer(container.name);
             }
 
+            var containerNames = request.containers.Select(x => x.name);
+            _drawingUtility.zipPngs(containerNames);
             this.Close();   //closes the form after finish execution
         }
 

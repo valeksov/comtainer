@@ -7,7 +7,7 @@ using System.Threading;
 using Ab3d.PowerToys.WinForms.Samples;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Collections.Generic;
+using System.IO.Compression;
 
 namespace ContainerDrawingApi.v2.Controllers
 {
@@ -61,22 +61,19 @@ namespace ContainerDrawingApi.v2.Controllers
             };
         }
 
-        public async Task<ActionResult> GetZipFile(string containerName)
+        public async Task<ActionResult> GetZipFile(string containerNames)
         {
-            string zipPath = $".\\output\\{containerName}\\{containerName}.zip";
-            var contentType = "application/octet-stream";
-            var bytes = await System.IO.File.ReadAllBytesAsync(zipPath);
-            return File(bytes, contentType, Path.GetFileName(zipPath));
-        }
-
-        [HttpGet]
-        [Route("get")]
-        public async Task<ActionResult> Get([FromQuery]string containerName)
-        {
-            string zipPath = $".\\output\\{containerName}\\{containerName}.zip";
-            var contentType = "application/octet-stream";
-            var bytes = await System.IO.File.ReadAllBytesAsync(zipPath);
-            return File(bytes, contentType, Path.GetFileName(zipPath));
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                {
+                    string zipPath = $".\\output\\all.zip";
+                    var contentType = "application/octet-stream";
+                    var bytes = await System.IO.File.ReadAllBytesAsync(zipPath);
+                    return File(bytes, contentType, Path.GetFileName(zipPath));
+                }
+            }
+           
         }
     }
 }
