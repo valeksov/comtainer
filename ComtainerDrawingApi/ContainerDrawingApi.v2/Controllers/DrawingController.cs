@@ -55,7 +55,7 @@ namespace ContainerDrawingApi.v2.Controllers
             });
 
             var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
-            return await GetZipFile(containerNames.FirstOrDefault());
+            return await GetZipFile();
         }
 
         private async Task<HttpResponseMessage> CalculateBoxesPosition(JObject request)
@@ -87,7 +87,7 @@ namespace ContainerDrawingApi.v2.Controllers
             };
         }
 
-        public async Task<ActionResult> GetZipFile(string containerNames)
+        public async Task<ActionResult> GetZipFile()
         {
             using (var memoryStream = new MemoryStream())
             {
