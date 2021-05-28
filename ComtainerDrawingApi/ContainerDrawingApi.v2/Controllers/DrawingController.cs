@@ -29,33 +29,49 @@ namespace ContainerDrawingApi.v2.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
+        [Route("test")]
+        public int Test()
+        {
+            return 1;
+        }
+
         [HttpPost]
         [Route("post")]
         [STAThread]
-        public async Task<ActionResult> CalculatePositionAndDraw([FromBody] JObject request)
+        public async Task<IActionResult> CalculatePositionAndDraw([FromBody] JObject request)
         {
-            var calculatedBoxesResponse = await CalculateBoxesPosition(request);
-            RootJsonObject calculatedBoxes = null;
-
-            calculatedBoxesResponse.EnsureSuccessStatusCode();
-            string responseBody = await calculatedBoxesResponse.Content.ReadAsStringAsync();
-            calculatedBoxes = JsonConvert.DeserializeObject<RootJsonObject>(responseBody);
-
-            await Task.Factory.StartNew(() =>
+            try
             {
-                var thread1 = RunForm(calculatedBoxes);
-                thread1.SetApartmentState(ApartmentState.STA);
-                thread1.Start();
+                var calculatedBoxesResponse = await CalculateBoxesPosition(request);
+                RootJsonObject calculatedBoxes = null;
 
-                //keeps waiting while thread1 finishes
-                while (thread1.IsAlive)
+                calculatedBoxesResponse.EnsureSuccessStatusCode();
+                string responseBody = await calculatedBoxesResponse.Content.ReadAsStringAsync();
+                calculatedBoxes = JsonConvert.DeserializeObject<RootJsonObject>(responseBody);
+
+                await Task.Factory.StartNew(() =>
                 {
-                    Thread.Sleep(1000);
-                }
-            });
+                    var thread1 = RunForm(calculatedBoxes);
+                    thread1.SetApartmentState(ApartmentState.STA);
+                    thread1.Start();
 
-            var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
-            return await GetZipFile();
+                    //keeps waiting while thread1 finishes
+                    while (thread1.IsAlive)
+                    {
+                        Thread.Sleep(1000);
+                    }
+                });
+
+                var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
+                var zipFile =  await GetZipFile();
+                return Ok(zipFile);
+            }
+            catch(Exception e)
+            {
+                _logger.LogError(e.Message, e.StackTrace);
+                return BadRequest(e.Message);
+            }
         }
 
         private async Task<HttpResponseMessage> CalculateBoxesPosition(JObject request)
