@@ -51,10 +51,10 @@ public class CargoItemRuntime {
 		return item.getLength() + "-" + item.getWidth() + "-" + item.getHeight();
 	}
 	public List<CargoItemPlacementRuntime> createPlacements(final int maxLength, final int maxWidth, final int maxHeight, 
-																	final boolean fixedLength, final boolean fixedWidth, final boolean fixedHeight) {
+																	final boolean fixedLength, final boolean fixedWidth, final boolean fixedHeight, final int quantity) {
 		final List<CargoItemPlacementRuntime> result = new ArrayList<CargoItemPlacementRuntime>();
 		final Set<String> dimensionsSet = new HashSet<String>();
-		for (int i = 0; i < getRemainingQuantity(); i++) {
+		for (int i = 0; i < quantity; i++) {
 			final CargoItemPlacementRuntime orinentation1 = new CargoItemPlacementRuntime(this, 1);
 			dimensionsSet.add(getKey(orinentation1));
 			addItem(result, orinentation1, maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight);

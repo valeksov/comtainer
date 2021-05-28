@@ -31,7 +31,7 @@ public class RuntimeUtil {
 		return result;
 	}
 	
-	private static boolean calculateSkipZ (final CargoItemRuntime item, final float lightUnstackableWeightLimit) {
+	public static boolean calculateSkipZ (final CargoItemRuntime item, final float lightUnstackableWeightLimit) {
 		if (item.getGroup().getSource().isStackGroupOnly()) {
 			return true;
 		}
@@ -56,19 +56,64 @@ public class RuntimeUtil {
 		return step;
 	}
 	
+	private static LoadPlanStepRuntime createSelfStackableStepInternal (final List<LoadPlanStepRuntime> placedSteps, final CargoItemRuntime item, 
+											final ContainerAreaRuntime source, final ConfigDto config) {
+		final List<CargoItemPlacementRuntime> itemPlacements = 	item.createPlacements(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false, false, 1);
+		for (final CargoItemPlacementRuntime placement : itemPlacements) {
+			final List<CargoItemPlacementRuntime> stepPlacements = new ArrayList<CargoItemPlacementRuntime>();
+			int itemsNum = 0;
+			int curHeight = 0;
+			while (itemsNum < item.getRemainingQuantity() && curHeight + placement.getHeight() < source.getMaxHeight()) {
+				final CargoItemPlacementRuntime stepPlacement = new CargoItemPlacementRuntime(placement.getItem(), placement.getOrientation());
+				stepPlacements.add(stepPlacement);
+				itemsNum++;
+				curHeight += placement.getHeight();
+			}
+			final LoadPlanStepRuntime step = new LoadPlanStepRuntime(stepPlacements, 0, 0, 0, 3);
+			final float minWeight = placement.getItem().getWeight();
+			final int length = step.getLength();
+			final int width = step.getWidth();
+			final int height = step.getHeight();
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight , 1.08f, 0, 0, 0, length, width, height, true, true, true);
+			if (area != null) {
+				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
+				return confirmStep(step, area, placedSteps);
+			}
+		}
+		return null;
+	}
+	
+	public static void createSelfStackableStep (final List<LoadPlanStepRuntime> placedSteps, final CargoItemRuntime item, 
+											final ContainerAreaRuntime source, final ConfigDto config) {
+		while (item.getRemainingQuantity() > 1) {
+			final LoadPlanStepRuntime newStep = createSelfStackableStepInternal(placedSteps, item, source, config);
+			if (newStep == null) {
+					break;
+			}
+		}
+	}
+
+	public static LoadPlanStepRuntime confirmStep(final LoadPlanStepRuntime step, final ContainerAreaRuntime area, final List<LoadPlanStepRuntime> placedSteps) {
+		step.confirm();
+		step.updateCoordinates(area.getStartX(), area.getStartY(), area.getStartZ());
+		placedSteps.add(step);
+		return step;
+	}
+	
 	public static LoadPlanStepRuntime createStep (final List<LoadPlanStepRuntime> steps, final CargoItemRuntime item, final ContainerAreaRuntime source, final ConfigDto config) {
-		final List<CargoItemPlacementRuntime> itemPlacements = 	item.createPlacements(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false, false);
+		final List<CargoItemPlacementRuntime> itemPlacements = 	item.createPlacements(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false, false, item.getRemainingQuantity());
 		for (final CargoItemPlacementRuntime placement : itemPlacements) {
 			final int length = placement.getLength();
 			final int width = placement.getWidth();
 			final int height = placement.getHeight();
-			final boolean skipZ = calculateSkipZ(item, config.getLightUnstackableWeightLimit());
-			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, 0, 0, 0, length, width, height, skipZ, false, false);
+			//final boolean skipZ = calculateSkipZ(item, config.getLightUnstackableWeightLimit());
+			final boolean skipStackable = item.getWeight() <= config.getLightUnstackableWeightLimit();
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, 0, 0, 0, length, width, height, false, false, skipStackable);
 			if (area != null) {
 				return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ());
 			}
 		}
-		
+	
 		if (!item.isPlaced()) {
 			if (!item.getSource().isStackable()) {
 				if (item.getSource().isSelfStackable()) {
@@ -125,6 +170,7 @@ public class RuntimeUtil {
 		return null;
 	}
 	
+	
 	private static List<LoadPlanStepRuntime> findSamePlacements (final List<LoadPlanStepRuntime> steps, final CargoItemPlacementRuntime placement) {
 		final List<LoadPlanStepRuntime> result = new ArrayList<LoadPlanStepRuntime>();
 		for (final LoadPlanStepRuntime step : steps) {
@@ -153,12 +199,19 @@ public class RuntimeUtil {
 		return result;
 	}
 	
+	private static boolean itemQualifyForMatch (final CargoItemRuntime item, final ContainerAreaRuntime area) {
+		if (!item.getSource().isStackable() && item.getSource().isSelfStackable()) {
+			return false;
+		}
+		return area.getMaxWeight() == 0 || item.getWeight() <= area.getMaxWeight();
+	}
+	
 	public static LoadPlanStepRuntime createStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime area, final int targetSum) {
 		final int targetDimension = area.getTargetDimension();
 //		final int otherDimension = area.getTargetDimension() % 2 + 1;
 		//Step 1: Filter Items heavier than maxWeight
 		final List<CargoItemRuntime> availableItems = items.stream()
-													.filter(item -> area.getMaxWeight() == 0 || item.getWeight() <= area.getMaxWeight())
+													.filter(item -> itemQualifyForMatch(item, area))
 													.collect(Collectors.toList());
 //		System.out.println("Searching Placements For Target ("+targetDimension + ") - "+area.getDimensionValue(targetDimension) + "x" + area.getDimensionValue(otherDimension));
 //		availableItems.forEach(item -> item.print(null));
@@ -198,7 +251,7 @@ public class RuntimeUtil {
 	private static List<CargoItemPlacementRuntime> createAvailablePlacements(final List<CargoItemRuntime> items, final int maxLength, final int maxWidth, final int maxHeight, 
 																		final boolean fixedLength, final boolean fixedWidth, final boolean fixedHeight) {
 		final List<CargoItemPlacementRuntime> result = new ArrayList<CargoItemPlacementRuntime>();
-		items.forEach(item -> result.addAll(item.createPlacements(maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight)));
+		items.forEach(item -> result.addAll(item.createPlacements(maxLength, maxWidth, maxHeight, fixedLength, fixedWidth, fixedHeight, item.getRemainingQuantity())));
 		return result;
 	}
 	
