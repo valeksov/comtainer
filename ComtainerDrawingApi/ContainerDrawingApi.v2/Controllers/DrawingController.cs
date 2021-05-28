@@ -1,6 +1,7 @@
 ﻿using ContainerDrawingApi.v2.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
 using System.Threading;
@@ -16,9 +17,11 @@ namespace ContainerDrawingApi.v2.Controllers
     public class DrawingController : ControllerBase
     {
         private ILogger<DrawingController> _logger;
+        private IConfiguration _configuration;
 
-        public DrawingController(ILogger<DrawingController> logger)
+        public DrawingController(IConfiguration configuration, ILogger<DrawingController> logger)
         {
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -51,7 +54,7 @@ namespace ContainerDrawingApi.v2.Controllers
                 {
                     System.Windows.Forms.Application.EnableVisualStyles();
                     System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
-                    var form1 = new Form1(request);
+                    var form1 = new Form1(request, _configuration);
                     System.Windows.Forms.Application.Run(form1);
                 }
             )
@@ -67,7 +70,7 @@ namespace ContainerDrawingApi.v2.Controllers
             {
                 using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                 {
-                    string zipPath = $".\\output\\all.zip";
+                    string zipPath = _configuration.GetValue<string>("ZipOutput");
                     var contentType = "application/octet-stream";
                     var bytes = await System.IO.File.ReadAllBytesAsync(zipPath);
                     return File(bytes, contentType, Path.GetFileName(zipPath));

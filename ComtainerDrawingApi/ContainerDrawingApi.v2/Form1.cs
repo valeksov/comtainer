@@ -15,6 +15,7 @@ using Ab3d.Utilities;
 using ContainerDrawingApi;
 using ContainerDrawingApi.v2.Models;
 using ContainerDrawingApi.v2.Models.LoadPlanObjects;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using HorizontalAlignment = System.Windows.HorizontalAlignment;
 using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
@@ -34,10 +35,13 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
         private RootJsonObject request;
 
+        private IConfiguration _configuration;
 
-        public Form1(RootJsonObject request)
+
+        public Form1(RootJsonObject request, IConfiguration configuration)
         {
             this.request = request;
+            _configuration = configuration;
             //this.TopMost = true;
             this.WindowState = FormWindowState.Maximized;
             InitializeComponent();
@@ -116,7 +120,8 @@ namespace Ab3d.PowerToys.WinForms.Samples
             }
 
             var containerNames = request.containers.Select(x => x.name);
-            _drawingUtility.zipPngs(containerNames);
+            string outputZipPath = _configuration.GetValue<string>("ZipOutput");
+            _drawingUtility.zipPngs(containerNames, outputZipPath);
             this.Close();   //closes the form after finish execution
         }
 

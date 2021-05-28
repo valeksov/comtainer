@@ -145,7 +145,7 @@ namespace ContainerDrawingApi
             }
         }
 
-        public void zipPngs(IEnumerable<string> containerNames)
+        public void zipPngs(IEnumerable<string> containerNames, string outputPath)
         {
             using (var memoryStream = new MemoryStream())
             {
@@ -178,8 +178,7 @@ namespace ContainerDrawingApi
                     }
                 }
 
-                string zipPath = $".\\output\\all.zip";
-                using (var fileStream = new FileStream(zipPath, FileMode.Create))
+                using (var fileStream = new FileStream(outputPath, FileMode.Create))
                 {
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     memoryStream.CopyTo(fileStream);
