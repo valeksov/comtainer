@@ -9,6 +9,10 @@ using Ab3d.PowerToys.WinForms.Samples;
 using System.Threading.Tasks;
 using System.Linq;
 using System.IO.Compression;
+using System.Net.Http;
+using Newtonsoft.Json;
+using System.Text;
+using Newtonsoft.Json.Linq;
 
 namespace ContainerDrawingApi.v2.Controllers
 {
@@ -28,11 +32,18 @@ namespace ContainerDrawingApi.v2.Controllers
         [HttpPost]
         [Route("post")]
         [STAThread]
-        public async Task<ActionResult> Draw([FromBody]RootJsonObject request)
+        public async Task<ActionResult> CalculatePositionAndDraw([FromBody] JObject request)
         {
+            var calculatedBoxesResponse = await CalculateBoxesPosition(request);
+            RootJsonObject calculatedBoxes = null;
+
+            calculatedBoxesResponse.EnsureSuccessStatusCode();
+            string responseBody = await calculatedBoxesResponse.Content.ReadAsStringAsync();
+            calculatedBoxes = JsonConvert.DeserializeObject<RootJsonObject>(responseBody);
+
             await Task.Factory.StartNew(() =>
             {
-                var thread1 = RunForm(request);
+                var thread1 = RunForm(calculatedBoxes);
                 thread1.SetApartmentState(ApartmentState.STA);
                 thread1.Start();
 
@@ -43,8 +54,20 @@ namespace ContainerDrawingApi.v2.Controllers
                 }
             });
 
-            var containerNames = request.containers.Select(x => x.name.Replace(" ", "_"));
+            var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
             return await GetZipFile(containerNames.FirstOrDefault());
+        }
+
+        private async Task<HttpResponseMessage> CalculateBoxesPosition(JObject request)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(_configuration.GetValue<string>("BoxesServiceBaseAddress"));
+                string json = JsonConvert.SerializeObject(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var result  = await client.PostAsync(_configuration.GetValue<string>("RunPackagerPath"), content);
+                return result;
+            }
         }
 
         private Thread RunForm(RootJsonObject request)
