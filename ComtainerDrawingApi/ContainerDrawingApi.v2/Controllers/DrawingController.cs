@@ -99,7 +99,7 @@ namespace ContainerDrawingApi.v2.Controllers
                 {
                     System.Windows.Forms.Application.EnableVisualStyles();
                     System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
-                    var form1 = new Form1(request, _configuration);
+                    var form1 = new Form1(request, _configuration, _logger);
                     System.Windows.Forms.Application.Run(form1);
                 }
             )
