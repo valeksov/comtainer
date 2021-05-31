@@ -43,12 +43,16 @@ namespace ContainerDrawingApi.v2.Controllers
         {
             try
             {
+                _logger.LogDebug("Calling calculate boxes service.");
                 var calculatedBoxesResponse = await CalculateBoxesPosition(request);
                 RootJsonObject calculatedBoxes = null;
 
+                _logger.LogInformation("Received response with calculated dimensions.");
                 calculatedBoxesResponse.EnsureSuccessStatusCode();
                 string responseBody = await calculatedBoxesResponse.Content.ReadAsStringAsync();
                 calculatedBoxes = JsonConvert.DeserializeObject<RootJsonObject>(responseBody);
+                
+                _logger.LogInformation("Starting new thread to draw boxes.");
 
                 await Task.Factory.StartNew(() =>
                 {
@@ -62,6 +66,8 @@ namespace ContainerDrawingApi.v2.Controllers
                         Thread.Sleep(1000);
                     }
                 });
+
+                _logger.LogInformation("Finished drawing boxes.");
 
                 var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
                 var zipFile =  await GetZipFile();
