@@ -17,6 +17,12 @@ public class CargoItemRuntime {
 	private final CargoGroupRuntime group;
 	private int remainingQuantity;
 	
+	public CargoItemRuntime (final CargoItemRuntime sourceItem) {
+		super();
+		this.source = sourceItem.getSource();
+		this.group = sourceItem.getGroup();
+		this.remainingQuantity = sourceItem.getRemainingQuantity();
+	}
 	
 	public CargoItemRuntime (final CargoItemDto source, final CargoGroupRuntime group) {
 		super();
@@ -118,7 +124,7 @@ public class CargoItemRuntime {
 		strBuf.append("Runtime Item (");
 		strBuf.append(getSource().getId());
 		strBuf.append(") ");
-		if (getRemainingQuantity() > 1) {
+		if (getRemainingQuantity() > -1) {
 			strBuf.append(getRemainingQuantity());
 			strBuf.append(" * ");
 		}
@@ -130,6 +136,8 @@ public class CargoItemRuntime {
 		strBuf.append(getHeight());
 		strBuf.append("), W:");
 		strBuf.append(getWeight());
+		strBuf.append(", Placed = ");
+		strBuf.append(isPlaced());
 		System.out.println(strBuf.toString());
 	}
 

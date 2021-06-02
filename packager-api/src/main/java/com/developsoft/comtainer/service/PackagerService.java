@@ -2,6 +2,7 @@ package com.developsoft.comtainer.service;
 
 import static com.developsoft.comtainer.runtime.util.RuntimeUtil.confirmStep;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import com.developsoft.comtainer.rest.dto.ComtainerResponseDto;
 import com.developsoft.comtainer.rest.dto.ConfigDto;
 import com.developsoft.comtainer.rest.dto.ContainerDto;
 import com.developsoft.comtainer.rest.dto.ContainerLoadPlanDto;
+import com.developsoft.comtainer.runtime.comparators.ContainerVolumeComparator;
 import com.developsoft.comtainer.runtime.model.CargoGroupRuntime;
 import com.developsoft.comtainer.runtime.model.CargoItemRuntime;
 import com.developsoft.comtainer.runtime.model.ContainerAreaRuntime;
@@ -79,6 +81,100 @@ public class PackagerService {
 		return result;
 	}
 	
+	private List<CargoItemRuntime> cloneItems(final List<CargoItemRuntime> items) {
+		return items.stream().map(sourceItem -> new CargoItemRuntime(sourceItem)).collect(Collectors.toList());
+	}
+	
+	public ComtainerResponseDto runLoadPlanner(final ComtainerRequestDto request) {
+		final ComtainerResponseDto result = new ComtainerResponseDto();
+		result.setConfig(request.getConfig());
+		result.setGroups(request.getGroups());
+		final List<ContainerDto> loadPlans = new ArrayList<ContainerDto>();
+		result.setContainers(loadPlans);
+		result.setStatus(0);
+		if (request.getContainers() != null && request.getContainers().size() > 0 && request.getGroups() != null && request.getGroups().size() > 0) {
+			final List<CargoGroupDto> newGroups = request.getGroups();
+			final List<CargoGroupDto> placedGroups =  new ArrayList<CargoGroupDto>();
+			final Map<String, CargoGroupDto> newPlacedGroupsMap = new HashMap<String, CargoGroupDto>();
+			final List<ContainerDto> availableContainers = new ArrayList<ContainerDto>(request.getContainers());
+			Collections.sort(availableContainers, new ContainerVolumeComparator());
+			int index = 1;
+			final List<CargoItemRuntime> initialItems = RuntimeUtil.createRuntimeItems(RuntimeUtil.createRuntimeGroups(newGroups));
+			List<CargoItemRuntime> curRemainingItems = initialItems;
+			final boolean keepGroupsTogether = request.getConfig().isKeepGroupsTogether();
+			while (true) {
+				final List<CargoItemRuntime> remainingItems = !keepGroupsTogether ? cloneItems(curRemainingItems) : null;
+				final List<CargoGroupDto> placedCandidateGroups = new ArrayList<CargoGroupDto>();
+				final ContainerAreaRuntime containerArea = ContainerUtil.createContainerArea(availableContainers.get(0), request.getConfig());
+				List<LoadPlanStepRuntime> placedSteps = new ArrayList<LoadPlanStepRuntime>();
+				boolean success = false;
+				if (keepGroupsTogether) {
+					placedSteps = placeGroups(placedGroups, newGroups, newPlacedGroupsMap, containerArea, request.getConfig(), placedCandidateGroups);
+				} else {
+					success = placeSteps(remainingItems, containerArea, placedSteps, request.getConfig());
+				}
+				if (placedSteps.size() > 0) {
+					if (keepGroupsTogether) {
+						for (final CargoGroupDto nextPlacedGroup : placedCandidateGroups) {
+							newPlacedGroupsMap.put(nextPlacedGroup.getId(), nextPlacedGroup);
+							nextPlacedGroup.setAlreadyLoaded(true);
+						}
+					}
+					if (success || (keepGroupsTogether && allGroupsPlaced(placedGroups, newGroups, newPlacedGroupsMap, false))) {
+						ContainerDto source = availableContainers.get(0);
+						List<LoadPlanStepRuntime> lastPlacedSteps = placedSteps;
+						if (availableContainers.size() > 1) {
+							for (int i = 1; i < availableContainers.size(); i++) {
+								final ContainerDto newContainerSource = availableContainers.get(i);
+								final ContainerAreaRuntime newContainerArea = ContainerUtil.createContainerArea(newContainerSource, request.getConfig());
+								final List<LoadPlanStepRuntime> newSteps = new ArrayList<LoadPlanStepRuntime>();
+								final List<CargoGroupRuntime> candidateRuntimeGroups = keepGroupsTogether ? RuntimeUtil.createRuntimeGroups(placedCandidateGroups) : null;
+								final List<CargoItemRuntime> candidateItems = keepGroupsTogether ? RuntimeUtil.createRuntimeItems(candidateRuntimeGroups) : cloneItems(curRemainingItems);
+								final boolean containerSuccess = placeSteps(candidateItems, newContainerArea, newSteps, request.getConfig());
+								if (containerSuccess) {
+									source = newContainerSource;
+									lastPlacedSteps = newSteps;
+								} else {
+									//No need to attempt with Smaller Containers
+									break;
+								}
+							}
+						}
+						loadPlans.add(createContainerWithLoadPlan(source, index, lastPlacedSteps));
+						break;
+					} else {
+						loadPlans.add(createContainerWithLoadPlan(availableContainers.get(0), index, placedSteps));
+						index++;
+					}
+					if (!keepGroupsTogether) {
+						curRemainingItems = remainingItems;
+					}
+				} else {
+					//In Theory we should get here ONLY if there is a group which alone doesn't fit in any container
+					result.setStatus(1);
+					break;
+				}
+				
+			}
+			if (!keepGroupsTogether) {
+				for (final CargoGroupDto nextGroup : newGroups) {
+					nextGroup.setAlreadyLoaded(true);
+				}
+				
+			}
+		}
+		return result;
+	}
+	
+	private ContainerDto createContainerWithLoadPlan (final ContainerDto source, final int index, final List<LoadPlanStepRuntime> placedSteps) {
+		final ContainerDto newContainer = new ContainerDto(source, index);
+		final ContainerLoadPlanDto newLoadPlan = new ContainerLoadPlanDto();
+		newLoadPlan.setId(UUID.randomUUID().toString());
+		newLoadPlan.setLoadPlanSteps(placedSteps.stream().map(step -> step.toDto()).collect(Collectors.toList()));
+		newContainer.setLoadPlan(newLoadPlan);
+		return newContainer;
+	}
+	
 	public ComtainerResponseDto run(final ComtainerRequestDto request) {
 		final ComtainerResponseDto result = new ComtainerResponseDto();
 		result.setConfig(request.getConfig());
@@ -113,20 +209,21 @@ public class PackagerService {
 				}
 			}
 			if (!success) {
-				final List<ContainerLoadPlanDto> newLoadPlans = new ArrayList<ContainerLoadPlanDto>();
-				final Map<String, CargoGroupDto> newPlacedGroupsMap = new HashMap<String, CargoGroupDto>();
-				for (int contIndex = 0; contIndex < numContainers; contIndex++) {
-					if (allGroupsPlaced(placedGroups, newGroups, newPlacedGroupsMap, false)) {
-						break;
-					}
-					final ContainerDto nextContainer = request.getContainers().get(contIndex);
-					final ContainerAreaRuntime nextArea = ContainerUtil.createContainerArea(nextContainer, request.getConfig());
-					final ContainerLoadPlanDto newLoadPlan = new ContainerLoadPlanDto();
-					newLoadPlan.setId(UUID.randomUUID().toString());
-					List<LoadPlanStepRuntime> placedSteps = new ArrayList<LoadPlanStepRuntime>();
-					final List<CargoGroupDto> placedCandidateGroups = new ArrayList<CargoGroupDto>(); 
+				if (request.getConfig().isKeepGroupsTogether()) {
+					final List<ContainerLoadPlanDto> newLoadPlans = new ArrayList<ContainerLoadPlanDto>();
+					final Map<String, CargoGroupDto> newPlacedGroupsMap = new HashMap<String, CargoGroupDto>();
+					for (int contIndex = 0; contIndex < numContainers; contIndex++) {
+						if (allGroupsPlaced(placedGroups, newGroups, newPlacedGroupsMap, false)) {
+							break;
+						}
+						final ContainerDto nextContainer = request.getContainers().get(contIndex);
+						final ContainerAreaRuntime containerArea = ContainerUtil.createContainerArea(nextContainer, request.getConfig());
+						final ContainerLoadPlanDto newLoadPlan = new ContainerLoadPlanDto();
+						newLoadPlan.setId(UUID.randomUUID().toString());
+						final List<CargoGroupDto> placedCandidateGroups = new ArrayList<CargoGroupDto>(); 
+						final List<LoadPlanStepRuntime> placedSteps = placeGroups(placedGroups, newGroups, newPlacedGroupsMap, containerArea, request.getConfig(), placedCandidateGroups);
 					
-					final List<CargoGroupDto> candidateGroups = new ArrayList<CargoGroupDto>(); 
+/*					final List<CargoGroupDto> candidateGroups = new ArrayList<CargoGroupDto>(); 
 					final Map<String, CargoGroupDto> failedGroupsMap = new HashMap<String, CargoGroupDto>();
 					CargoGroupDto lastGroup = findOneCandidateGroup(candidateGroups, placedGroups, newGroups, newPlacedGroupsMap, failedGroupsMap);
 					while (lastGroup != null) {
@@ -145,39 +242,94 @@ public class PackagerService {
 						}
 						lastGroup = findOneCandidateGroup(candidateGroups, placedGroups, newGroups, newPlacedGroupsMap, failedGroupsMap);
 					}
-					if (placedSteps.size() > 0) {
-						printStats(nextContainer, placedSteps);
-						newLoadPlan.setLoadPlanSteps(placedSteps.stream().map(step -> step.toDto()).collect(Collectors.toList()));
-						newLoadPlans.add(newLoadPlan);
-						for (final CargoGroupDto nextPlacedGroup : placedCandidateGroups) {
-							newPlacedGroupsMap.put(nextPlacedGroup.getId(), nextPlacedGroup);
+*/					
+						if (placedSteps.size() > 0) {
+							printStats(nextContainer, placedSteps);
+							newLoadPlan.setLoadPlanSteps(placedSteps.stream().map(step -> step.toDto()).collect(Collectors.toList()));
+							newLoadPlans.add(newLoadPlan);
+							for (final CargoGroupDto nextPlacedGroup : placedCandidateGroups) {
+								newPlacedGroupsMap.put(nextPlacedGroup.getId(), nextPlacedGroup);
+							}
 						}
 					}
-				}
-				final int newPlacedGroups = countPlacedNewGroups(newGroups, newPlacedGroupsMap);
-				if (allGroupsPlaced(placedGroups, newGroups, newPlacedGroupsMap, true) && newPlacedGroups > 0) {
-					result.setStatus(allGroupsPlaced(placedGroups, newGroups, newPlacedGroupsMap, false) ? 0 : 1);
-					for (int i = 0; i < newLoadPlans.size(); i++) {
-						final ContainerDto container = request.getContainers().get(i);
-						final ContainerLoadPlanDto loadPlan = newLoadPlans.get(i);
-						container.setLoadPlan(loadPlan);
-					}
-					if (numContainers > newLoadPlans.size()) {
-						for (int j = newLoadPlans.size(); j < numContainers; j++) {
-							final ContainerDto container = request.getContainers().get(j);
-							container.setLoadPlan(null);
+					final int newPlacedGroups = countPlacedNewGroups(newGroups, newPlacedGroupsMap);
+					if (allGroupsPlaced(placedGroups, newGroups, newPlacedGroupsMap, true) && newPlacedGroups > 0) {
+						result.setStatus(allGroupsPlaced(placedGroups, newGroups, newPlacedGroupsMap, false) ? 0 : 1);
+						for (int i = 0; i < newLoadPlans.size(); i++) {
+							final ContainerDto container = request.getContainers().get(i);
+							final ContainerLoadPlanDto loadPlan = newLoadPlans.get(i);
+							container.setLoadPlan(loadPlan);
 						}
-					}
-					for (final CargoGroupDto nextNewGroup : newGroups) {
-						if (newPlacedGroupsMap.containsKey(nextNewGroup.getId())) {
-							nextNewGroup.setAlreadyLoaded(true);
+						if (numContainers > newLoadPlans.size()) {
+							for (int j = newLoadPlans.size(); j < numContainers; j++) {
+								final ContainerDto container = request.getContainers().get(j);
+								container.setLoadPlan(null);
+							}
 						}
+						for (final CargoGroupDto nextNewGroup : newGroups) {
+							if (newPlacedGroupsMap.containsKey(nextNewGroup.getId())) {
+								nextNewGroup.setAlreadyLoaded(true);
+							}
+						}
+					} else {
+						result.setStatus(1);
 					}
 				} else {
-					result.setStatus(1);
+					final boolean containersSuccess = placeContainers(request);
+					result.setStatus(containersSuccess ? 0 :1);
 				}
-				
 			}
+		}
+		return result;
+	}
+	private boolean placeContainers (final ComtainerRequestDto request) {
+		final List<CargoGroupRuntime> groupRuntimes = RuntimeUtil.createRuntimeGroups(request.getGroups());
+		final List<CargoItemRuntime> initialItems = RuntimeUtil.createRuntimeItems(groupRuntimes);
+		boolean success = false;
+		for (final ContainerDto nextContainer : request.getContainers()) {
+			nextContainer.setLoadPlan(null);
+		}
+		for (final ContainerDto nextContainer : request.getContainers()) {
+			final ContainerAreaRuntime containerArea = ContainerUtil.createContainerArea(nextContainer, request.getConfig());
+			final List<LoadPlanStepRuntime> newSteps = new ArrayList<LoadPlanStepRuntime>();
+			final boolean containerSuccess = placeSteps(initialItems, containerArea, newSteps, request.getConfig());
+			if (newSteps.size() > 0) {
+				final ContainerLoadPlanDto newLoadPlan = new ContainerLoadPlanDto();
+				newLoadPlan.setId(UUID.randomUUID().toString());
+				newLoadPlan.setLoadPlanSteps(newSteps.stream().map(step -> step.toDto()).collect(Collectors.toList()));
+				nextContainer.setLoadPlan(newLoadPlan);
+			}
+			if (containerSuccess) {
+				success = true;
+				break;
+			}
+		}
+		for (final CargoGroupRuntime nextGroupRuntime : groupRuntimes) {
+			nextGroupRuntime.getSource().setAlreadyLoaded(nextGroupRuntime.isPlaced());
+		}
+		return success;
+	}
+	private List<LoadPlanStepRuntime> placeGroups(final List<CargoGroupDto> placedGroups, final List<CargoGroupDto> newGroups, final Map<String, CargoGroupDto> newPlacedGroupsMap,
+											final ContainerAreaRuntime containerArea, final ConfigDto config, final List<CargoGroupDto> placedCandidateGroups) {
+		List<LoadPlanStepRuntime> result = new ArrayList<LoadPlanStepRuntime>();
+		final List<CargoGroupDto> candidateGroups = new ArrayList<CargoGroupDto>(); 
+		final Map<String, CargoGroupDto> failedGroupsMap = new HashMap<String, CargoGroupDto>();
+		CargoGroupDto lastGroup = findOneCandidateGroup(candidateGroups, placedGroups, newGroups, newPlacedGroupsMap, failedGroupsMap);
+		while (lastGroup != null) {
+			candidateGroups.add(lastGroup);
+			final List<LoadPlanStepRuntime> newSteps = new ArrayList<LoadPlanStepRuntime>();
+			final List<CargoGroupRuntime> candidateRuntimeGroups = RuntimeUtil.createRuntimeGroups(candidateGroups);
+			final List<CargoItemRuntime> candidateItems = RuntimeUtil.createRuntimeItems(candidateRuntimeGroups);
+			final boolean containerSuccess = placeSteps(candidateItems, containerArea, newSteps, config);
+			if (containerSuccess) {
+				result = newSteps;
+				placedCandidateGroups.clear();
+				placedCandidateGroups.addAll(candidateGroups);
+			} else {
+				failedGroupsMap.put(lastGroup.getId(), lastGroup);
+				candidateGroups.remove(candidateGroups.size() - 1);
+			}
+			lastGroup = findOneCandidateGroup(candidateGroups, placedGroups, newGroups, newPlacedGroupsMap, failedGroupsMap);
 		}
 		return result;
 	}
@@ -204,7 +356,7 @@ public class PackagerService {
 	
 	private boolean placeSteps (final List<CargoItemRuntime> items, final ContainerAreaRuntime source, final List<LoadPlanStepRuntime> placedSteps, final ConfigDto config) {
 		boolean result = true;
-		while (findNextStep(items, source, placedSteps) != null);
+		while (findNextStep(items, source, placedSteps, config) != null);
 		final List<CargoItemRuntime> remainingItems = items.stream().filter(item -> !item.isPlaced()).collect(Collectors.toList());
 		if (remainingItems.size() > 0) {
 			for (final CargoItemRuntime item : remainingItems) {
@@ -226,14 +378,14 @@ public class PackagerService {
 		return result;
 	}
 	
-	private LoadPlanStepRuntime findNextStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime source, final List<LoadPlanStepRuntime> placedSteps) {
+	private LoadPlanStepRuntime findNextStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime source, final List<LoadPlanStepRuntime> placedSteps, final ConfigDto config) {
 		final int initialTarget = source.getDimensionValue(source.getTargetDimension());
 		final int targetDeduction = Math.round(((float)initialTarget) * 0.15f);
-		return findNextStep(items, source, placedSteps, initialTarget, targetDeduction);
+		return findNextStep(items, source, placedSteps, config, initialTarget, targetDeduction);
 	}
 	
 	private LoadPlanStepRuntime findNextStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime source, final List<LoadPlanStepRuntime> placedSteps,
-												final int targetSum, final int targetDeduction) {
+												final ConfigDto config, final int targetSum, final int targetDeduction) {
 		if (targetSum < targetDeduction) {
 			return null;
 		}
@@ -246,13 +398,15 @@ public class PackagerService {
 			final int length = step.getLength();
 			final int width = step.getWidth();
 			final int height = step.getHeight();
-			ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, 0, 0, 0, length, width, height, false, skipCargoSupport, false);
+			ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
+																			config.getMaxLayers(), 0, 0, 0, length, width, height, false, skipCargoSupport, false);
 			if (area != null) {
 				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
 				return confirmStep(step, area, placedSteps);
 			} else {
 				//We will try to find place for rotated step (length becomes width and vise versa)
-				area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, 0, 0, 0, width, length, height, false, skipCargoSupport, false);
+				area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
+																			config.getMaxLayers(), 0, 0, 0, width, length, height, false, skipCargoSupport, false);
 				if (area != null) {
 					final LoadPlanStepRuntime rotatedStep = step.createRotatedCopy();
 					System.out.println ("Found Area for Rotated step: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
@@ -261,7 +415,7 @@ public class PackagerService {
 				}
 			}
 		}
-		return findNextStep(items, source, placedSteps, targetSum - targetDeduction, targetDeduction);
+		return findNextStep(items, source, placedSteps, config, targetSum - targetDeduction, targetDeduction);
 	}
 	
 	public String buildColorPallete() {

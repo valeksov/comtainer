@@ -1,26 +1,21 @@
 package com.developsoft.comtainer.runtime.util;
 
-import java.util.List;
-
 import com.developsoft.comtainer.rest.dto.ConfigDto;
 import com.developsoft.comtainer.rest.dto.ContainerDto;
-import com.developsoft.comtainer.runtime.model.CargoItemRuntime;
 import com.developsoft.comtainer.runtime.model.ContainerAreaRuntime;
-import com.developsoft.comtainer.runtime.model.LoadPlanStepRuntime;
 
 public class ContainerUtil {
 
 	
-	private static final float DEFAULT_DIMENSION_OFFSET = 0.9f;
 	public static void main(final String[] args) {
 	}
 	
 	public static ContainerAreaRuntime createContainerArea (final ContainerDto container, final ConfigDto config) {
 		final int cargoSupport = config != null && config.getCargoSupport() != null ? config.getCargoSupport() : 100;
-		return createContainerArea(container.getLength(), container.getWidth(), container.getHeight(), cargoSupport);
+		return createContainerArea(container.getLength(), container.getWidth(), container.getHeight(), cargoSupport, container.getMaxAllowedWeight());
 	}	
 	
-	public static ContainerAreaRuntime createContainerArea (final int length, final int width, final int height, final int cargoSupport) {
+	public static ContainerAreaRuntime createContainerArea (final int length, final int width, final int height, final int cargoSupport, final Float maxWeight) {
 		final ContainerAreaRuntime area = new ContainerAreaRuntime();
 		area.setCargoSupport(cargoSupport);
 		area.setCheckAllArea(true);
@@ -30,7 +25,7 @@ public class ContainerUtil {
 		area.setMaxHeight(height);
 		area.setMaxLength(length);
 		area.setMaxWidth(width);
-		area.setMaxWeight(0.0f);
+		area.setMaxWeight(maxWeight);
 		area.setStartX(0);
 		area.setStartY(0);
 		area.setStartZ(0);

@@ -30,7 +30,7 @@ public class CargoGroupRuntime {
 	}
 	
 	public boolean isPlaced() {
-		return this.getItems().stream().filter(item -> item.isPlaced()).count() == 0;
+		return this.getItems().stream().filter(item -> !item.isPlaced()).count() == 0;
 	}
 	
 	public boolean wasPlacedPreviousRun() {

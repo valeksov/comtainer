@@ -15,6 +15,8 @@ public class CargoItemPlacementRuntime {
 	private int startZ;
 	private boolean placed;
 	
+	private int layer;
+	
 	public CargoItemPlacementRuntime(final CargoItemPlacementDto dto) {
 		super();
 		this.orientation = dto.getOrientation();
@@ -62,7 +64,8 @@ public class CargoItemPlacementRuntime {
 		System.out.println(strB.toString());
 	}
 	
-	public boolean place() {
+	public boolean place(final int layer) {
+		setLayer(layer);
 		boolean result = getItem().markUsed(1);
 		if (result) {
 			this.placed = true;

@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter @Setter
 public class ContainerAreaRuntime {
 
-	private float maxWeight;
+	private Float maxWeight;
 	private int maxLength;
 	private int maxWidth;
 	private int maxHeight;
@@ -23,13 +23,14 @@ public class ContainerAreaRuntime {
 	private int targetDimension;
 	private int cargoSupport;
 	private final List<LoadPlanStepRuntime> steps;
+	private int layer;
 	
 	public ContainerAreaRuntime() {
 		super();
 		this.steps = new ArrayList<LoadPlanStepRuntime>();
 	}
 	public ContainerAreaRuntime(final float weight, final int length, final int width, final int height, final int startX, final int startY, final int startZ, final int cargoSupport,
-													final boolean fixedLength, final boolean fixedWidth, final boolean fixedHeight, final boolean checkAllArea, final int targetDimension) {
+						final boolean fixedLength, final boolean fixedWidth, final boolean fixedHeight, final boolean checkAllArea, final int targetDimension, final Float maxWeight) {
 		this();
 		this.maxWeight = weight;
 		this.maxLength = length;
@@ -44,6 +45,7 @@ public class ContainerAreaRuntime {
 		this.checkAllArea = checkAllArea;
 		this.targetDimension = targetDimension;
 		this.cargoSupport = cargoSupport;
+		this.maxWeight = maxWeight;
 	}
 	
 	public void addStep(final LoadPlanStepRuntime step) {
@@ -52,7 +54,7 @@ public class ContainerAreaRuntime {
 	
 	public ContainerAreaRuntime clone() {
 		return new ContainerAreaRuntime(getMaxWeight(), getMaxLength(), getMaxWidth(), getMaxHeight(), getStartX(), getStartY(), getStartZ(), getCargoSupport(),
-												isFixedLength(), isFixedWidth(), isFixedHeight(), isCheckAllArea(), getTargetDimension());
+												isFixedLength(), isFixedWidth(), isFixedHeight(), isCheckAllArea(), getTargetDimension(), getMaxWeight());
 	}
 	
 	public int getDimensionValue(final int dimension) {

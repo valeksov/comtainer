@@ -18,6 +18,7 @@ public class LoadPlanStepRuntime {
 	private Integer startY;
 	private Integer startZ;
 	private final int dimension;
+	private int layer;
 	
 	public LoadPlanStepRuntime(final LoadPlanStepDto dto) {
 		super();
@@ -107,9 +108,10 @@ public class LoadPlanStepRuntime {
 		System.out.println(strB.toString());
 	}
 	
-	public void confirm() {
+	public void confirm(final int layer) {
+		setLayer(layer);
 		for (final CargoItemPlacementRuntime nextPlacement : getPlacements()) {
-			nextPlacement.place();
+			nextPlacement.place(layer);
 		}
 	}
 
@@ -186,5 +188,12 @@ public class LoadPlanStepRuntime {
 			}
 		}
 		return (minWeigth < Float.MAX_VALUE) ? minWeigth : 10.0f;
+	}
+	public float getWeight() {
+		float result = 0;
+		for (final CargoItemPlacementRuntime placement : getPlacements()) {
+			result += placement.getItem().getWeight();
+		}		
+		return result;
 	}
 }

@@ -25,6 +25,12 @@ public class PackagerRestController {
 	public ResponseEntity<ComtainerResponseDto> run(@RequestBody final ComtainerRequestDto request) {
 		return ResponseEntity.ok(this.packagerService.run(request));
 	}
+
+	@CrossOrigin
+	@PostMapping("runLoadPlanner")
+	public ResponseEntity<ComtainerResponseDto> runLoadPlanner(@RequestBody final ComtainerRequestDto request) {
+		return ResponseEntity.ok(this.packagerService.runLoadPlanner(request));
+	}
 	
 	@CrossOrigin
 	@GetMapping(value = "colors",

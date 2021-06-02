@@ -45,11 +45,11 @@ public class RuntimeUtil {
 		}
 		return false;
 	}
-	private static LoadPlanStepRuntime confirmNewStep (final CargoItemPlacementRuntime placement, final int startX, final int startY, final int startZ) {
+	private static LoadPlanStepRuntime confirmNewStep (final CargoItemPlacementRuntime placement, final int startX, final int startY, final int startZ, final int layer) {
 		final List<CargoItemPlacementRuntime> placements = new ArrayList<CargoItemPlacementRuntime>();
 		placements.add(placement);
 		final LoadPlanStepRuntime step = new LoadPlanStepRuntime(placements, 0, 0, 0, 2);
-		step.confirm();
+		step.confirm(layer);
 		step.updateCoordinates(startX, startY, startZ);
 		System.out.println("Placing single item on X=" + startX + ", Y=" + startY + ", Z="+startZ);
 		placement.print();
@@ -63,7 +63,8 @@ public class RuntimeUtil {
 			final List<CargoItemPlacementRuntime> stepPlacements = new ArrayList<CargoItemPlacementRuntime>();
 			int itemsNum = 0;
 			int curHeight = 0;
-			while (itemsNum < item.getRemainingQuantity() && curHeight + placement.getHeight() < source.getMaxHeight()) {
+			final int maxStackItems = config.getMaxLayers() > 0 ? Math.min(config.getMaxLayers(), item.getRemainingQuantity()) : item.getRemainingQuantity();
+			while (itemsNum < maxStackItems && curHeight + placement.getHeight() < source.getMaxHeight()) {
 				final CargoItemPlacementRuntime stepPlacement = new CargoItemPlacementRuntime(placement.getItem(), placement.getOrientation());
 				stepPlacements.add(stepPlacement);
 				itemsNum++;
@@ -74,7 +75,8 @@ public class RuntimeUtil {
 			final int length = step.getLength();
 			final int width = step.getWidth();
 			final int height = step.getHeight();
-			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight , 1.08f, 0, 0, 0, length, width, height, true, true, true);
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight , 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), 
+																	config.getMaxHeavierCargoOnTop(), config.getMaxLayers(), 0, 0, 0, length, width, height, true, true, true);
 			if (area != null) {
 				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
 				return confirmStep(step, area, placedSteps);
@@ -94,7 +96,7 @@ public class RuntimeUtil {
 	}
 
 	public static LoadPlanStepRuntime confirmStep(final LoadPlanStepRuntime step, final ContainerAreaRuntime area, final List<LoadPlanStepRuntime> placedSteps) {
-		step.confirm();
+		step.confirm(area.getLayer());
 		step.updateCoordinates(area.getStartX(), area.getStartY(), area.getStartZ());
 		placedSteps.add(step);
 		return step;
@@ -108,9 +110,10 @@ public class RuntimeUtil {
 			final int height = placement.getHeight();
 			//final boolean skipZ = calculateSkipZ(item, config.getLightUnstackableWeightLimit());
 			final boolean skipStackable = item.getWeight() <= config.getLightUnstackableWeightLimit();
-			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, 0, 0, 0, length, width, height, false, false, skipStackable);
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, placement.getItem().getWeight(), config.isAllowHeavierCargoOnTop(),  
+														config.getMaxHeavierCargoOnTop(), config.getMaxLayers(), 0, 0, 0, length, width, height, false, false, skipStackable);
 			if (area != null) {
-				return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ());
+				return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ(), area.getLayer());
 			}
 		}
 	
@@ -122,7 +125,8 @@ public class RuntimeUtil {
 						if (samePlacementSteps.size() > 0) {
 							for (final LoadPlanStepRuntime nextStep : samePlacementSteps) {
 								for (final CargoItemPlacementRuntime nextSamePlacement : nextStep.getPlacements()) {
-									if (placement.getItem().getSource().getId().equals(nextSamePlacement.getItem().getSource().getId())) {
+									if (config.getMaxLayers() > 0 && nextSamePlacement.getLayer() < config.getMaxLayers() &&
+										placement.getItem().getSource().getId().equals(nextSamePlacement.getItem().getSource().getId())) {
 										if (placement.getOrientation() == nextSamePlacement.getOrientation()) {
 											final int startX = nextStep.getStartX() + nextSamePlacement.getStartX();
 											final int startY = nextStep.getStartY() + nextSamePlacement.getStartY();
@@ -130,8 +134,14 @@ public class RuntimeUtil {
 											final int endX = startX + placement.getLength();
 											final int endY = startY + placement.getWidth();
 											final int endZ = startZ + placement.getHeight();
+											final float usedWeight = MatrixUtil.getUsedWeight(steps);
+											final Float containerMaxWeight = source.getMaxWeight();
+											if (containerMaxWeight != null && containerMaxWeight > 0 && placement.getItem().getWeight() + usedWeight > containerMaxWeight) {
+												return null;
+											}
+
 											if (endZ < source.getMaxHeight() && MatrixUtil.findIntersection(steps, startX, startY, startZ, endX, endY, endZ) == null) {
-												return confirmNewStep(placement, startX, startY, startZ);
+												return confirmNewStep(placement, startX, startY, startZ, nextSamePlacement.getLayer() + 1);
 											}
 										}
 									}
@@ -155,9 +165,10 @@ public class RuntimeUtil {
 										final int width = placement.getWidth();
 										final int height = placement.getHeight();
 										final ContainerAreaRuntime area = 
-												MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, startX, startY, startZ, length, width, height, true, true, true);
+											MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, placement.getItem().getWeight(), config.isAllowHeavierCargoOnTop(), 
+																			config.getMaxHeavierCargoOnTop(), config.getMaxLayers(), startX, startY, startZ, length, width, height, true, true, true);
 										if (area != null) {
-											return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ());
+											return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ(), area.getLayer());
 										}
 									}
 								}
@@ -203,7 +214,7 @@ public class RuntimeUtil {
 		if (!item.getSource().isStackable() && item.getSource().isSelfStackable()) {
 			return false;
 		}
-		return area.getMaxWeight() == 0 || item.getWeight() <= area.getMaxWeight();
+		return area.getMaxWeight() ==null || area.getMaxWeight() == 0 || item.getWeight() <= area.getMaxWeight();
 	}
 	
 	public static LoadPlanStepRuntime createStep (final List<CargoItemRuntime> items, final ContainerAreaRuntime area, final int targetSum) {

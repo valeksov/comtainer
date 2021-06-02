@@ -7,6 +7,8 @@ import lombok.Setter;
 public class ConfigDto {
 	private Integer cargoSupport; //in percents
 	private Float lightUnstackableWeightLimit;	//derived from F)	 2nd  sub property for unstackable goods- to determine light goods that unstackable. 
-	private boolean openNewContainer; //if Cargo does not fit in current containers
-
+	private int maxLayers;
+	private boolean allowHeavierCargoOnTop;
+	private Float maxHeavierCargoOnTop;
+	private boolean keepGroupsTogether;
 }
