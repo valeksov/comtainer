@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.developsoft.comtainer.rest.dto.CargoGroupDto;
+import com.developsoft.comtainer.rest.dto.CargoItemDto;
 import com.developsoft.comtainer.rest.dto.ComtainerRequestDto;
 import com.developsoft.comtainer.rest.dto.ComtainerResponseDto;
 import com.developsoft.comtainer.rest.dto.ConfigDto;
@@ -444,5 +445,47 @@ public class PackagerService {
 		final int g = 20 + rnd.nextInt(230);
 		final int b = 20 + rnd.nextInt(230);
 		return Integer.toHexString(r) + Integer.toHexString(g) + Integer.toHexString(b);
+	}
+	
+	public List<CargoGroupDto> generateRandomGroups(final String idPreffix, final int numGroups) {
+		final List<CargoGroupDto> result = new ArrayList<CargoGroupDto>();
+		final Random rnd = new Random();
+		for (int i = 0; i < numGroups; i++) {
+			final CargoGroupDto group = new CargoGroupDto();
+			result.add(group);
+			group.setId(idPreffix + "-" + i);
+			group.setName(group.getId());
+			group.setColor(randomColor());
+			group.setAlreadyLoaded(false);
+			group.setStackGroupOnly(false);
+			final List<CargoItemDto> items = new ArrayList<CargoItemDto>();
+			group.setItems(items);
+			final int numItems = 1 + rnd.nextInt(10);
+			for (int j = 0; j < numItems; j++) {
+				final CargoItemDto item = new CargoItemDto();
+				items.add(item);
+				item.setId(group.getId() + "-" + j);
+				item.setName(item.getId());
+				item.setCargoStyle(0);
+				final int length = 200 + rnd.nextInt(1800);
+				item.setLength(length);
+				final int width = 200 + rnd.nextInt(1800);
+				item.setWidth(width);
+				final int height = 200 + rnd.nextInt(1800);
+				item.setHeight(height);
+				final float weight = 20 + rnd.nextInt(1460);
+				item.setWeight(weight);
+				final int quantity = 1 + rnd.nextInt(10);
+				item.setQuantity(quantity);
+				final int r1 = 1 + rnd.nextInt(10);
+				item.setRotatable(r1 % 2 == 0);
+				final int r2 = 1 + rnd.nextInt(10);
+				final boolean stackable = r2 % 2 == 0;
+				item.setStackable(stackable);
+				final boolean selfStackable = !stackable && quantity > 1;
+				item.setSelfStackable(selfStackable);
+			}
+		}
+		return result;
 	}
 }
