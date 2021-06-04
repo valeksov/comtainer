@@ -16,5 +16,7 @@ public class CargoItemDto {
 	private boolean rotatable; //if true, allows all orientations, if false, it will allow on his axis only
 	private boolean stackable; 
 	private boolean selfStackable; 
+	private String color;
+	private Integer maxLayer;
 
 }

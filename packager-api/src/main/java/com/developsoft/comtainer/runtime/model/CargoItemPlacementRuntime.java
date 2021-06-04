@@ -1,6 +1,7 @@
 package com.developsoft.comtainer.runtime.model;
 
 import com.developsoft.comtainer.rest.dto.CargoItemPlacementDto;
+import com.developsoft.comtainer.runtime.util.RuntimeUtil;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -115,9 +116,10 @@ public class CargoItemPlacementRuntime {
 		result.setStartY(parentStep.getStartY() + getStartY());
 		result.setStartZ(parentStep.getStartZ() + getStartZ());
 		//TBD Color
-		if (getItem().getGroup() != null) {
-			result.setColor(getItem().getGroup().getSource().getColor());
-		}
+		final String color = getItem().getSource().getColor() != null && getItem().getSource().getColor().length() > 0 ? getItem().getSource().getColor() :
+							getItem().getGroup() != null && getItem().getGroup().getSource().getColor() != null && getItem().getGroup().getSource().getColor().length() > 0
+										? getItem().getGroup().getSource().getColor() : RuntimeUtil.randomColor();
+		result.setColor(color);
 		return result;
 	}
 }

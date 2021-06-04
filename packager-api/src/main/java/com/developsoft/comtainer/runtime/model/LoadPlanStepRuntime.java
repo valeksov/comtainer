@@ -196,4 +196,16 @@ public class LoadPlanStepRuntime {
 		}		
 		return result;
 	}
+	
+	public int getMaxLayer() {
+		int result = 0;
+		for (final CargoItemPlacementRuntime nextPlacement : getPlacements()) {
+			if (nextPlacement.getItem().getSource().getMaxLayer() != null && nextPlacement.getItem().getSource().getMaxLayer() > 0){
+				if (result == 0 || nextPlacement.getItem().getSource().getMaxLayer() < result) {
+					result = nextPlacement.getItem().getSource().getMaxLayer();
+				}
+			}
+		}
+		return result;
+	}
 }

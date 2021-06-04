@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -51,19 +52,20 @@ public class RuntimeUtil {
 		final LoadPlanStepRuntime step = new LoadPlanStepRuntime(placements, 0, 0, 0, 2);
 		step.confirm(layer);
 		step.updateCoordinates(startX, startY, startZ);
-		System.out.println("Placing single item on X=" + startX + ", Y=" + startY + ", Z="+startZ);
-		placement.print();
+//		System.out.println("Placing single item on X=" + startX + ", Y=" + startY + ", Z="+startZ);
+//		placement.print();
 		return step;
 	}
 	
 	private static LoadPlanStepRuntime createSelfStackableStepInternal (final List<LoadPlanStepRuntime> placedSteps, final CargoItemRuntime item, 
 											final ContainerAreaRuntime source, final ConfigDto config) {
 		final List<CargoItemPlacementRuntime> itemPlacements = 	item.createPlacements(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false, false, 1);
+		final int maxLayer = item.getSource().getMaxLayer() != null ? item.getSource().getMaxLayer() : 0;
 		for (final CargoItemPlacementRuntime placement : itemPlacements) {
 			final List<CargoItemPlacementRuntime> stepPlacements = new ArrayList<CargoItemPlacementRuntime>();
 			int itemsNum = 0;
 			int curHeight = 0;
-			final int maxStackItems = config.getMaxLayers() > 0 ? Math.min(config.getMaxLayers(), item.getRemainingQuantity()) : item.getRemainingQuantity();
+			final int maxStackItems = maxLayer > 0 ? Math.min(maxLayer, item.getRemainingQuantity()) : item.getRemainingQuantity();
 			while (itemsNum < maxStackItems && curHeight + placement.getHeight() < source.getMaxHeight()) {
 				final CargoItemPlacementRuntime stepPlacement = new CargoItemPlacementRuntime(placement.getItem(), placement.getOrientation());
 				stepPlacements.add(stepPlacement);
@@ -76,9 +78,9 @@ public class RuntimeUtil {
 			final int width = step.getWidth();
 			final int height = step.getHeight();
 			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight , 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), 
-																	config.getMaxHeavierCargoOnTop(), config.getMaxLayers(), 0, 0, 0, length, width, height, true, true, true);
+																	config.getMaxHeavierCargoOnTop(), maxLayer, 0, 0, 0, length, width, height, true, true, true);
 			if (area != null) {
-				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
+//				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
 				return confirmStep(step, area, placedSteps);
 			}
 		}
@@ -104,6 +106,7 @@ public class RuntimeUtil {
 	
 	public static LoadPlanStepRuntime createStep (final List<LoadPlanStepRuntime> steps, final CargoItemRuntime item, final ContainerAreaRuntime source, final ConfigDto config) {
 		final List<CargoItemPlacementRuntime> itemPlacements = 	item.createPlacements(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false, false, item.getRemainingQuantity());
+		final int maxLayer = item.getSource().getMaxLayer() != null ? item.getSource().getMaxLayer() : 0;
 		for (final CargoItemPlacementRuntime placement : itemPlacements) {
 			final int length = placement.getLength();
 			final int width = placement.getWidth();
@@ -111,7 +114,7 @@ public class RuntimeUtil {
 			//final boolean skipZ = calculateSkipZ(item, config.getLightUnstackableWeightLimit());
 			final boolean skipStackable = item.getWeight() <= config.getLightUnstackableWeightLimit();
 			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, placement.getItem().getWeight(), config.isAllowHeavierCargoOnTop(),  
-														config.getMaxHeavierCargoOnTop(), config.getMaxLayers(), 0, 0, 0, length, width, height, false, false, skipStackable);
+														config.getMaxHeavierCargoOnTop(), maxLayer, 0, 0, 0, length, width, height, false, false, skipStackable);
 			if (area != null) {
 				return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ(), area.getLayer());
 			}
@@ -125,7 +128,7 @@ public class RuntimeUtil {
 						if (samePlacementSteps.size() > 0) {
 							for (final LoadPlanStepRuntime nextStep : samePlacementSteps) {
 								for (final CargoItemPlacementRuntime nextSamePlacement : nextStep.getPlacements()) {
-									if (config.getMaxLayers() > 0 && nextSamePlacement.getLayer() < config.getMaxLayers() &&
+									if (maxLayer > 0 && nextSamePlacement.getLayer() < maxLayer &&
 										placement.getItem().getSource().getId().equals(nextSamePlacement.getItem().getSource().getId())) {
 										if (placement.getOrientation() == nextSamePlacement.getOrientation()) {
 											final int startX = nextStep.getStartX() + nextSamePlacement.getStartX();
@@ -166,7 +169,7 @@ public class RuntimeUtil {
 										final int height = placement.getHeight();
 										final ContainerAreaRuntime area = 
 											MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, placement.getItem().getWeight(), config.isAllowHeavierCargoOnTop(), 
-																			config.getMaxHeavierCargoOnTop(), config.getMaxLayers(), startX, startY, startZ, length, width, height, true, true, true);
+																			config.getMaxHeavierCargoOnTop(), maxLayer, startX, startY, startZ, length, width, height, true, true, true);
 										if (area != null) {
 											return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ(), area.getLayer());
 										}
@@ -363,4 +366,13 @@ public class RuntimeUtil {
 		return result;
 	}
 
+	public static String randomColor() {
+		final Random rnd = new Random();
+		final int r = 20 + rnd.nextInt(230);
+		final int g = 20 + rnd.nextInt(230);
+		final int b = 20 + rnd.nextInt(230);
+		return Integer.toHexString(r) + Integer.toHexString(g) + Integer.toHexString(b);
+	}
+		
+	
 }

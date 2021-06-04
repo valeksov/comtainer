@@ -1,6 +1,7 @@
 package com.developsoft.comtainer.service;
 
 import static com.developsoft.comtainer.runtime.util.RuntimeUtil.confirmStep;
+import static com.developsoft.comtainer.runtime.util.RuntimeUtil.randomColor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -137,6 +138,7 @@ public class PackagerService {
 									lastPlacedSteps = newSteps;
 								} else {
 									//No need to attempt with Smaller Containers
+									printStats(source, lastPlacedSteps);
 									break;
 								}
 							}
@@ -144,6 +146,7 @@ public class PackagerService {
 						loadPlans.add(createContainerWithLoadPlan(source, index, lastPlacedSteps));
 						break;
 					} else {
+						printStats(availableContainers.get(0), placedSteps);
 						loadPlans.add(createContainerWithLoadPlan(availableContainers.get(0), index, placedSteps));
 						index++;
 					}
@@ -295,6 +298,7 @@ public class PackagerService {
 			final List<LoadPlanStepRuntime> newSteps = new ArrayList<LoadPlanStepRuntime>();
 			final boolean containerSuccess = placeSteps(initialItems, containerArea, newSteps, request.getConfig());
 			if (newSteps.size() > 0) {
+				printStats(nextContainer, newSteps);
 				final ContainerLoadPlanDto newLoadPlan = new ContainerLoadPlanDto();
 				newLoadPlan.setId(UUID.randomUUID().toString());
 				newLoadPlan.setLoadPlanSteps(newSteps.stream().map(step -> step.toDto()).collect(Collectors.toList()));
@@ -370,7 +374,7 @@ public class PackagerService {
 					if (step != null) {
 						placedSteps.add(step);
 					} else {
-						item.print("FAILED");
+//						item.print("FAILED");
 						result = false;
 					}
 				}
@@ -392,26 +396,26 @@ public class PackagerService {
 		}
 		final LoadPlanStepRuntime step = RuntimeUtil.createStep(items, source, targetSum);
 		if (step != null) {
-			System.out.println ("Searching for free area for step");
-			step.print("New Candidate");
+//			System.out.println ("Searching for free area for step");
+//			step.print("New Candidate");
 			final boolean skipCargoSupport = step.getPlacements().size() > 1;
 			final float minWeight = step.getMinItemWeight();
 			final int length = step.getLength();
 			final int width = step.getWidth();
 			final int height = step.getHeight();
 			ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
-																			config.getMaxLayers(), 0, 0, 0, length, width, height, false, skipCargoSupport, false);
+																			step.getMaxLayer(), 0, 0, 0, length, width, height, false, skipCargoSupport, false);
 			if (area != null) {
-				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
+//				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
 				return confirmStep(step, area, placedSteps);
 			} else {
 				//We will try to find place for rotated step (length becomes width and vise versa)
 				area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
-																			config.getMaxLayers(), 0, 0, 0, width, length, height, false, skipCargoSupport, false);
+																			step.getMaxLayer(), 0, 0, 0, width, length, height, false, skipCargoSupport, false);
 				if (area != null) {
 					final LoadPlanStepRuntime rotatedStep = step.createRotatedCopy();
-					System.out.println ("Found Area for Rotated step: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
-					rotatedStep.print("Rotated");
+//					System.out.println ("Found Area for Rotated step: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
+//					rotatedStep.print("Rotated");
 					return confirmStep(rotatedStep, area, placedSteps);
 				}
 			}
@@ -437,14 +441,6 @@ public class PackagerService {
 		}
 		strB.append("</table></body></html>");
 		return strB.toString();
-	}
-	
-	final String randomColor() {
-		final Random rnd = new Random();
-		final int r = 20 + rnd.nextInt(230);
-		final int g = 20 + rnd.nextInt(230);
-		final int b = 20 + rnd.nextInt(230);
-		return Integer.toHexString(r) + Integer.toHexString(g) + Integer.toHexString(b);
 	}
 	
 	public List<CargoGroupDto> generateRandomGroups(final String idPreffix, final int numGroups) {

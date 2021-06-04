@@ -13,24 +13,39 @@ public class CargoGroupRuntime {
 
 	private CargoGroupDto source;
 	private final List<CargoItemRuntime> items;
+	private final List<CargoGroupRuntime> groups;
 	
 	public CargoGroupRuntime (final CargoGroupDto source) {
 		super();
 		this.source = source;
 		this.items = new ArrayList<CargoItemRuntime>();
+		this.groups = new ArrayList<CargoGroupRuntime>();
 		initItems();
 	}
 	
 	public List<CargoItemRuntime> initItems() {
-		if (source.getItems() != null) {
+		if (getSource().getItems() != null) {
 			this.items.clear();
-			source.getItems().forEach(source -> this.items.add(new CargoItemRuntime(source, this)));
+			getSource().getItems().forEach(item -> this.items.add(new CargoItemRuntime(item, this)));
 		}
-		return this.items;
+		if (getSource().getGroups() != null && getSource().getGroups().size() > 0) {
+			this.groups.clear();
+			for (final CargoGroupDto nextGroup : getSource().getGroups()) {
+				final CargoGroupRuntime nextGroupRuntime = new CargoGroupRuntime(nextGroup);
+				this.groups.add(nextGroupRuntime);
+				this.items.addAll(nextGroupRuntime.getItems());
+			}
+		}
+		return getItems();
 	}
 	
 	public boolean isPlaced() {
-		return this.getItems().stream().filter(item -> !item.isPlaced()).count() == 0;
+		for (final CargoItemRuntime nextItem : getItems()) {
+			if (!nextItem.isPlaced()) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	public boolean wasPlacedPreviousRun() {
