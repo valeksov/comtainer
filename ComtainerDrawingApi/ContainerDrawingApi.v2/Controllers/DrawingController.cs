@@ -71,7 +71,7 @@ namespace ContainerDrawingApi.v2.Controllers
 
                 var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
                 var zipFile =  await GetZipFile();
-                return Ok(zipFile);
+                return zipFile;
             }
             catch(Exception e)
             {
