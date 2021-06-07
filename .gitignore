@@ -1,0 +1,8 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/git/v16
+/ComtainerDrawingApi/ContainerDrawingApi.v2/output/1381_usa
+/ComtainerDrawingApi/ContainerDrawingApi.v2/output/all.zip
+/.vs/slnx.sqlite
