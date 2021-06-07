@@ -54,9 +54,10 @@ namespace ContainerDrawingApi.v2.Controllers
                 
                 _logger.LogInformation("Starting new thread to draw boxes.");
 
+                string requestNumber = Guid.NewGuid().ToString();
                 await Task.Factory.StartNew(() =>
                 {
-                    var thread1 = RunForm(calculatedBoxes);
+                    var thread1 = RunForm(calculatedBoxes, requestNumber);
                     thread1.SetApartmentState(ApartmentState.STA);
                     thread1.Start();
 
@@ -92,14 +93,14 @@ namespace ContainerDrawingApi.v2.Controllers
             }
         }
 
-        private Thread RunForm(RootJsonObject request)
+        private Thread RunForm(RootJsonObject request, string requestNumber)
         {
             return new Thread(
                 delegate ()
                 {
                     System.Windows.Forms.Application.EnableVisualStyles();
                     System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
-                    var form1 = new Form1(request, _configuration, _logger);
+                    var form1 = new Form1(request, requestNumber, _configuration, _logger);
                     System.Windows.Forms.Application.Run(form1);
                 }
             )
@@ -115,7 +116,7 @@ namespace ContainerDrawingApi.v2.Controllers
             {
                 using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                 {
-                    string zipPath = _configuration.GetValue<string>("ZipOutput");
+                    string zipPath = _configuration.GetValue<string>("ZipOutput") +  "\\all.zip";
                     var contentType = "application/octet-stream";
                     var bytes = await System.IO.File.ReadAllBytesAsync(zipPath);
                     return File(bytes, contentType, Path.GetFileName(zipPath));

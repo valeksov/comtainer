@@ -126,11 +126,11 @@ namespace ContainerDrawingApi
             _viewport3D.Children.Add(sideUpLine);
         }
 
-        public void exportToPng(string containerName, string imageName)
+        public void exportToPng(string requestNumber, string containerName, string imageName)
         {
             var bitmap = BitmapRendering.RenderToBitmap(_viewport3D, 1920, 1080);
 
-            var subPath = $".\\output\\{containerName.Replace(' ', '_')}";
+            var subPath = $".\\output\\{requestNumber}\\{containerName.Replace(' ', '_')}";
             bool exists = Directory.Exists(subPath);
             if (!exists)
             {
@@ -145,7 +145,7 @@ namespace ContainerDrawingApi
             }
         }
 
-        public void zipPngs(IEnumerable<string> containerNames, string outputPath)
+        public void zipPngs(string requestNumber, IEnumerable<string> containerNames, string outputPath)
         {
             using (var memoryStream = new MemoryStream())
             {
@@ -154,7 +154,7 @@ namespace ContainerDrawingApi
                     foreach (var containerName in containerNames)
                     {
                         var noSpaceContainer = containerName.Replace(" ", "_");
-                        string startPath = $".\\output\\{ noSpaceContainer }";
+                        string startPath = $".\\output\\{requestNumber}\\{ noSpaceContainer }";
 
 
                         var images = new List<byte[]>();
@@ -178,7 +178,7 @@ namespace ContainerDrawingApi
                     }
                 }
 
-                using (var fileStream = new FileStream(outputPath, FileMode.Create))
+                using (var fileStream = new FileStream(outputPath + "all.zip", FileMode.Create))
                 {
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     memoryStream.CopyTo(fileStream);

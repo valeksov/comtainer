@@ -35,14 +35,16 @@ namespace Ab3d.PowerToys.WinForms.Samples
         private DiffuseMaterial _normalMaterial = new DiffuseMaterial(System.Windows.Media.Brushes.Silver);
 
         private RootJsonObject request;
+        private string requestNumber;
 
         private IConfiguration _configuration;
         private ILogger _logger;
 
-        public Form1(RootJsonObject request, IConfiguration configuration, ILogger logger)
+        public Form1(RootJsonObject request, string requestNumber, IConfiguration configuration, ILogger logger)
         {
             _logger = logger;
             this.request = request;
+            this.requestNumber = requestNumber;
             _configuration = configuration;
             //this.TopMost = true;
             this.WindowState = FormWindowState.Maximized;
@@ -110,7 +112,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
                         }
 
                         string pictureName = String.Concat(counter, '_', loadPlanStep.id.Substring(0, 8));
-                        _drawingUtility.exportToPng(container.name, pictureName);
+                        _drawingUtility.exportToPng(requestNumber, container.name, pictureName);
                         wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   //remove highlighted border
                         wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
                         counter++;
@@ -125,18 +127,19 @@ namespace Ab3d.PowerToys.WinForms.Samples
                     wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   //remove highlighted border
                     wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
                     _logger.LogInformation("Export image to PNG: " + container.name);
-                    _drawingUtility.exportToPng(container.name, container.name);
+                    _drawingUtility.exportToPng(requestNumber, container.name, container.name);
                 }
 
                 _logger.LogInformation("Create zip file");
                 var containerNames = request.containers.Select(x => x.name);
                 string outputZipPath = _configuration.GetValue<string>("ZipOutput");
-                _drawingUtility.zipPngs(containerNames, outputZipPath);
+                _drawingUtility.zipPngs(requestNumber, containerNames, outputZipPath);
                 this.Close();   //closes the form after finish execution
             }
             catch(Exception e)
             {
                 _logger.LogError(e.Message + e.StackTrace);
+                throw e;
             }
         }
 
@@ -218,7 +221,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
             string fileName = "manualExport";
             string container = "Current";
             var drawingUtility = new DrawingUtility(_viewport3D);
-            drawingUtility.exportToPng(container, fileName);
+            drawingUtility.exportToPng(requestNumber, container, fileName);
         }
 
         private void animateButton_Click(object sender, EventArgs e)
