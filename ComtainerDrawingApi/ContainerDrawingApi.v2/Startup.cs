@@ -13,6 +13,11 @@ namespace ContainerDrawingApi.v2
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            //set license for PowerToys
+            Ab3d.Licensing.PowerToys.LicenseHelper.SetLicense(licenseOwner: "DevelopSoft Ltd",
+                                                licenseType: "SingleDeveloperLicense",
+                                                license: "FE0E-E23D-F383-65BA-957F-8EBE-137F-8D71-9A20-2027-72D8-0BF0-65F2-B2BE-6F7F-F16F");
         }
 
         public IConfiguration Configuration { get; }
