@@ -43,6 +43,11 @@ namespace Ab3d.PowerToys.WinForms.Samples
         public Form1(RootJsonObject request, string requestNumber, IConfiguration configuration, ILogger logger)
         {
             _logger = logger;
+
+            Ab3d.Licensing.PowerToys.LicenseHelper.SetLicense(licenseOwner: "DevelopSoft Ltd",
+                                                  licenseType: "SingleDeveloperLicense",
+                                                  license: "FE0E-E23D-F383-65BA-957F-8EBE-137F-8D71-9A20-2027-72D8-0BF0-65F2-B2BE-6F7F-F16F");
+
             this.request = request;
             this.requestNumber = requestNumber;
             _configuration = configuration;
