@@ -14,15 +14,20 @@ using ContainerDrawingApi.v2.Models.LoadPlanObjects;
 using Ab3d.Visuals;
 using System.IO.Compression;
 using System.Collections.Generic;
+using ContainerDrawingApi.v2.Models;
+using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace ContainerDrawingApi
 {
     public class DrawingUtility
     {
         private Viewport3D _viewport3D;
+        private IConfiguration _configuration;
 
-        public DrawingUtility(Viewport3D viewport3D)
+        public DrawingUtility(Viewport3D viewport3D, IConfiguration configuration)
         {
+            _configuration = configuration;
             _viewport3D = viewport3D;
         }
 
@@ -145,16 +150,34 @@ namespace ContainerDrawingApi
             }
         }
 
-        public void zipPngs(string requestNumber, IEnumerable<string> containerNames, string outputPath)
+
+        public void saveResponseWithDimensions(string requestNumber, RootJsonObject request)
         {
+            var subPath = $"{_configuration.GetValue<string>("ZipOutput")}\\{requestNumber}\\";
+            bool exists = Directory.Exists(subPath);
+            if (!exists)
+            {
+                Directory.CreateDirectory(subPath);
+            }
+
+            string result = JsonConvert.SerializeObject(request);
+            var jsonName = _configuration.GetValue<string>("ResultJsonName");
+            File.WriteAllText(subPath + jsonName, result);
+        }
+
+        public void zipResultJsonAndPngs(string requestNumber, IEnumerable<string> containerNames, string outputPath)
+        {
+            string zipOutput = _configuration.GetValue<string>("ZipOutput");
+
             using (var memoryStream = new MemoryStream())
             {
                 using (var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                 {
+                    //add all images to zip file
                     foreach (var containerName in containerNames)
                     {
                         var noSpaceContainer = containerName.Replace(" ", "_");
-                        string startPath = $".\\output\\{requestNumber}\\{ noSpaceContainer }";
+                        string startPath = $"{zipOutput}\\{requestNumber}\\{ noSpaceContainer }";
 
 
                         var images = new List<byte[]>();
@@ -170,15 +193,31 @@ namespace ContainerDrawingApi
                         {
                             var fileInArchive = zipArchive.CreateEntry($"{containerName}\\{fileNames[i]}", CompressionLevel.Optimal);
                             using (var entryStream = fileInArchive.Open())
-                            using (var fileToCompressStream = new MemoryStream(images[i]))
                             {
-                                fileToCompressStream.CopyTo(entryStream);
+                                using (var fileToCompressStream = new MemoryStream(images[i]))
+                                {
+                                    fileToCompressStream.CopyTo(entryStream);
+                                }
                             }
+                        }
+                    }
+
+                    //add result.json to zip file
+                    var jsonName = _configuration.GetValue<string>("ResultJsonName");
+                    var jsonPath = $"{zipOutput}\\{requestNumber}\\{jsonName}";
+                    var jsonArchive = zipArchive.CreateEntry(jsonName, CompressionLevel.Optimal);
+                    byte[] jsonByte = File.ReadAllBytes(jsonPath);
+                    using (var entryStream = jsonArchive.Open())
+                    {
+                        using (var fileToCompressStream = new MemoryStream(jsonByte))
+                        {
+                            fileToCompressStream.CopyTo(entryStream);
                         }
                     }
                 }
 
-                using (var fileStream = new FileStream(outputPath + "all.zip", FileMode.Create))
+                var zipName = _configuration.GetValue<string>("ZipName");
+                using (var fileStream = new FileStream(outputPath + zipName, FileMode.Create))
                 {
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     memoryStream.CopyTo(fileStream);

@@ -71,7 +71,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
                 string colorsBody = readJsonRequest("Color.json");
                 var allColors = JsonConvert.DeserializeObject<Dictionary<string, string>>(colorsBody);
-                var _drawingUtility = new DrawingUtility(_viewport3D);
+                var _drawingUtility = new DrawingUtility(_viewport3D, _configuration);
 
                 _logger.LogInformation("Start iterating through containers");
                 foreach (var container in request.containers)
@@ -133,7 +133,8 @@ namespace Ab3d.PowerToys.WinForms.Samples
                 _logger.LogInformation("Create zip file");
                 var containerNames = request.containers.Select(x => x.name);
                 string outputZipPath = _configuration.GetValue<string>("ZipOutput");
-                _drawingUtility.zipPngs(requestNumber, containerNames, outputZipPath);
+                _drawingUtility.saveResponseWithDimensions(requestNumber,request);
+                _drawingUtility.zipResultJsonAndPngs(requestNumber, containerNames, outputZipPath);
                 this.Close();   //closes the form after finish execution
             }
             catch(Exception e)
@@ -220,7 +221,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
         {
             string fileName = "manualExport";
             string container = "Current";
-            var drawingUtility = new DrawingUtility(_viewport3D);
+            var drawingUtility = new DrawingUtility(_viewport3D, _configuration);
             drawingUtility.exportToPng(requestNumber, container, fileName);
         }
 
