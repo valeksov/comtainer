@@ -140,7 +140,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
             catch(Exception e)
             {
                 _logger.LogError(e.Message + e.StackTrace);
-                throw e;
+                throw;
             }
         }
 
