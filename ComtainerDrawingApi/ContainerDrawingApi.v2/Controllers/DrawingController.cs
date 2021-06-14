@@ -55,31 +55,26 @@ namespace ContainerDrawingApi.v2.Controllers
                 _logger.LogInformation("Starting new thread to draw boxes.");
 
                 string requestNumber = Guid.NewGuid().ToString();
+                IActionResult zipFile = null;
                 await Task.Factory.StartNew(() =>
                 {
-                    try
-                    {
-                        var thread1 = RunForm(calculatedBoxes, requestNumber);
-                        thread1.SetApartmentState(ApartmentState.STA);
-                        thread1.Start();
+                    var thread1 = RunForm(calculatedBoxes, requestNumber);
+                    thread1.SetApartmentState(ApartmentState.STA);
+                    thread1.Start();
 
-                        //keeps waiting while thread1 finishes
-                        while (thread1.IsAlive)
-                        {
-                            Thread.Sleep(1000);
-                        }
-                    }
-                    catch(Exception e)
-                    {
-                        _logger.LogError(e.Message);
-                        throw;
-                    }
+                    //keeps waiting while thread1 finishes
+                    //while (thread1.IsAlive)
+                    //{
+                    //    Thread.Sleep(1000);
+                    //}
+                }).ContinueWith((antecedent) =>
+                {
+                    _logger.LogInformation("Finished drawing boxes.");
+                    
+                    var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
+                    zipFile = GetZipFile();
                 });
 
-                _logger.LogInformation("Finished drawing boxes.");
-
-                var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
-                var zipFile =  await GetZipFile();
                 return zipFile;
             }
             catch(Exception e)
@@ -118,7 +113,7 @@ namespace ContainerDrawingApi.v2.Controllers
             };
         }
 
-        public async Task<ActionResult> GetZipFile()
+        public ActionResult GetZipFile()
         {
             using (var memoryStream = new MemoryStream())
             {
@@ -126,7 +121,7 @@ namespace ContainerDrawingApi.v2.Controllers
                 {
                     string zipPath = _configuration.GetValue<string>("ZipOutput") +  "\\all.zip";
                     var contentType = "application/octet-stream";
-                    var bytes = await System.IO.File.ReadAllBytesAsync(zipPath);
+                    var bytes = System.IO.File.ReadAllBytes(zipPath);
                     return File(bytes, contentType, Path.GetFileName(zipPath));
                 }
             }
