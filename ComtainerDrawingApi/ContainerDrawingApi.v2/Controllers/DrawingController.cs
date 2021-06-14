@@ -57,14 +57,22 @@ namespace ContainerDrawingApi.v2.Controllers
                 string requestNumber = Guid.NewGuid().ToString();
                 await Task.Factory.StartNew(() =>
                 {
-                    var thread1 = RunForm(calculatedBoxes, requestNumber);
-                    thread1.SetApartmentState(ApartmentState.STA);
-                    thread1.Start();
-
-                    //keeps waiting while thread1 finishes
-                    while (thread1.IsAlive)
+                    try
                     {
-                        Thread.Sleep(1000);
+                        var thread1 = RunForm(calculatedBoxes, requestNumber);
+                        thread1.SetApartmentState(ApartmentState.STA);
+                        thread1.Start();
+
+                        //keeps waiting while thread1 finishes
+                        while (thread1.IsAlive)
+                        {
+                            Thread.Sleep(1000);
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        _logger.LogError(e.Message);
+                        throw;
                     }
                 });
 
