@@ -58,29 +58,35 @@ namespace ContainerDrawingApi.v2.Controllers
                 IActionResult zipFile = null;
                 await Task.Factory.StartNew(() =>
                 {
-                    var thread1 = RunForm(calculatedBoxes, requestNumber);
-                    thread1.SetApartmentState(ApartmentState.STA);
-                    thread1.Start();
+                    try
+                    {
+                        var thread1 = RunForm(calculatedBoxes, requestNumber);
+                        thread1.SetApartmentState(ApartmentState.STA);
+                        thread1.Start();
 
-                    //keeps waiting while thread1 finishes
-                    //while (thread1.IsAlive)
-                    //{
-                    //    Thread.Sleep(1000);
-                    //}
-                }).ContinueWith((antecedent) =>
-                {
-                    _logger.LogInformation("Finished drawing boxes.");
-                    
-                    var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
-                    zipFile = GetZipFile();
+                        //keeps waiting while thread1 finishes
+                        while (thread1.IsAlive)
+                        {
+                            Thread.Sleep(1000);
+                        }
+                    }catch(Exception e)
+                    {
+                        _logger.LogError(e.Message + e.StackTrace);
+                        throw;
+                    }
+                  
                 });
+
+                _logger.LogInformation("Finished drawing boxes.");
+                var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
+                zipFile = GetZipFile();
 
                 return zipFile;
             }
             catch(Exception e)
             {
                 _logger.LogError(e.Message, e.StackTrace);
-                return BadRequest(e.Message);
+                return BadRequest(e.Message + e.StackTrace);
             }
         }
 
