@@ -55,32 +55,14 @@ namespace ContainerDrawingApi.v2.Controllers
                 _logger.LogInformation("Starting new thread to draw boxes.");
 
                 string requestNumber = Guid.NewGuid().ToString();
-                IActionResult zipFile = null;
-                await Task.Factory.StartNew(() =>
-                {
-                    try
-                    {
-                        var thread1 = RunForm(calculatedBoxes, requestNumber);
-                        thread1.SetApartmentState(ApartmentState.STA);
-                        thread1.Start();
-
-                        //keeps waiting while thread1 finishes
-                        while (thread1.IsAlive)
-                        {
-                            Thread.Sleep(1000);
-                        }
-                    }catch(Exception e)
-                    {
-                        _logger.LogError(e.Message + e.StackTrace);
-                        throw;
-                    }
-                  
-                });
+                Thread uiThread = RunForm(calculatedBoxes, requestNumber);
+                uiThread.SetApartmentState(ApartmentState.STA);
+                uiThread.Start();
+                uiThread.Join();
 
                 _logger.LogInformation("Finished drawing boxes.");
                 var containerNames = calculatedBoxes.containers.Select(x => x.name.Replace(" ", "_"));
-                zipFile = GetZipFile();
-
+                IActionResult zipFile = GetZipFile();
                 return zipFile;
             }
             catch(Exception e)
