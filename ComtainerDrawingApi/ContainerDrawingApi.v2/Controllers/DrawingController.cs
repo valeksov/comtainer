@@ -89,10 +89,19 @@ namespace ContainerDrawingApi.v2.Controllers
             return new Thread(
                 delegate ()
                 {
-                    System.Windows.Forms.Application.EnableVisualStyles();
-                    System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
-                    var form1 = new Form1(request, requestNumber, _configuration, _logger);
-                    System.Windows.Forms.Application.Run(form1);
+                    try
+                    {
+                        System.Windows.Forms.Application.EnableVisualStyles();
+                        System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+                        var form1 = new Form1(request, requestNumber, _configuration, _logger);
+                        System.Windows.Forms.Application.Run(form1);
+
+                    }
+                    catch(Exception e)
+                    {
+                        _logger.LogError(e.Message + e.StackTrace);
+                        throw;
+                    }
                 }
             )
             {
