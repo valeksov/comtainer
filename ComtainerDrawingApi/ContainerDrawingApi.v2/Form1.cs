@@ -39,6 +39,8 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
         private IConfiguration _configuration;
         private ILogger _logger;
+        private DrawingUtility _drawingUtility;
+      
 
         public Form1(RootJsonObject request, string requestNumber, IConfiguration configuration, ILogger logger)
         {
@@ -46,6 +48,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
             this.request = request;
             this.requestNumber = requestNumber;
             _configuration = configuration;
+          
             //this.TopMost = true;
             this.WindowState = FormWindowState.Maximized;
             InitializeComponent();
@@ -68,20 +71,17 @@ namespace Ab3d.PowerToys.WinForms.Samples
             {
                 // The event manager will be used to manage the mouse events on our boxes
                 _eventManager3D = new Ab3d.Utilities.EventManager3D(_viewport3D);
-
-                string colorsBody = readJsonRequest("Color.json");
-                var allColors = JsonConvert.DeserializeObject<Dictionary<string, string>>(colorsBody);
-                var _drawingUtility = new DrawingUtility(_viewport3D, _configuration);
+                _drawingUtility = new DrawingUtility(_viewport3D, _configuration);
 
                 _logger.LogInformation("Start iterating through containers");
                 foreach (var container in request.containers)
                 {
                     //draw container
                     _viewport3D.Children.Clear();
-                    _drawingUtility.DrawContainer(0.0, 0.0, 0.0, container.length / 10, container.height / 10, container.width / 10);
+                    ConvertContainerMeasurementsInCentimeters(container);
+                    _drawingUtility.DrawContainer(0.0, 0.0, 0.0, container.length, container.height, container.width);
 
                     var borderColor = System.Windows.Media.Color.FromRgb(255, 255, 0);  //yellow
-                    int randomColorIndex = 0;
                     var wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
                     int counter = 0;
 
@@ -90,51 +90,36 @@ namespace Ab3d.PowerToys.WinForms.Samples
                         foreach (var item in loadPlanStep.items)
                         {
                             ConvertItemMeasurementsInCentimeters(item);
-                            Visuals.WireBoxVisual3D wireBoxFrame = null;
-                            if (!string.IsNullOrEmpty(item.color))
-                            {
-                                Color color = ColorTranslator.FromHtml("#" + item.color);
-                                var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
-                                _drawingUtility.DrawBox(item.startX, item.startY, item.startZ, item.length, item.height, item.width, mediaColor);
-                                wireBoxFrame = _drawingUtility.DrawFrame(item.startX, item.startY, item.startZ, item.length, item.height, item.width, borderColor);
-                            }
-                            else
-                            {
-                                string colorStr = allColors.ElementAt(randomColorIndex).Value;
-                                Color color = ColorTranslator.FromHtml(colorStr);
-                                var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
-                                _drawingUtility.DrawBox(item.startX, item.startY, item.startZ, item.length, item.height, item.width, mediaColor);
-                                wireBoxFrame = _drawingUtility.DrawFrame(item.startX, item.startY, item.startZ, item.length, item.height, item.width, borderColor);
-                            }
-
-                            _drawingUtility.MarkSideUp(item.orientation, item.startX, item.startY, item.startZ, item.length, item.height, item.width);
+                            var wireBoxFrame = DrawBoxAndFrame(borderColor, item);
                             wireBoxFrames.Add(wireBoxFrame);
                         }
 
                         string pictureName = String.Concat(counter, '_', loadPlanStep.id.Substring(0, 8));
-                        _drawingUtility.exportToPng(requestNumber, container.name, pictureName);
-                        wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   //remove highlighted border
-                        wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
+                        _drawingUtility.ExportToPng(requestNumber, container.name, pictureName);
                         counter++;
 
-
-                        if (randomColorIndex < allColors.Count - 1)
-                            randomColorIndex++;
-                        else
-                            randomColorIndex = 0;
+                        //converts all border colors to black, removes highlighting
+                        wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   
+                        wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
                     }
 
-                    wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));   //remove highlighted border
+                    //removes highlighting and export final container view to png
+                    wireBoxFrames.ForEach(x => x.LineColor = System.Windows.Media.Color.FromRgb(0, 0, 0));
                     wireBoxFrames = new List<Visuals.WireBoxVisual3D>();
-                    _logger.LogInformation("Export image to PNG: " + container.name);
-                    _drawingUtility.exportToPng(requestNumber, container.name, container.name);
+                    _drawingUtility.ExportToPng(requestNumber, container.name, container.name);
+
+                    //export 2d views - left, right, front, rear, top and bottom 
+                    ExportAllProfilePng(container);
+
+                    //Return camera to default position for next container
+                   SetTargetPositionCameraToDefaultView();
                 }
 
                 _logger.LogInformation("Create zip file");
                 var containerNames = request.containers.Select(x => x.name);
                 string outputZipPath = _configuration.GetValue<string>("ZipOutput");
-                _drawingUtility.saveResponseWithDimensions(requestNumber,request);
-                _drawingUtility.zipResultJsonAndPngs(requestNumber, containerNames, outputZipPath);
+                _drawingUtility.SaveResponseWithDimensions(requestNumber, request);
+                _drawingUtility.ZipResultJsonAndPngs(requestNumber, containerNames, outputZipPath);
                 this.Close();   //closes the form after finish execution
             }
             catch(Exception e)
@@ -144,6 +129,16 @@ namespace Ab3d.PowerToys.WinForms.Samples
             }
         }
 
+        private Visuals.WireBoxVisual3D DrawBoxAndFrame(System.Windows.Media.Color borderColor, LoadPlanItem item)
+        {
+            Color color = ColorTranslator.FromHtml("#" + item.color);
+            var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
+
+            _drawingUtility.DrawBox(item.startX, item.startY, item.startZ, item.length, item.height, item.width, mediaColor);
+            _drawingUtility.MarkSideUp(item.orientation, item.startX, item.startY, item.startZ, item.length, item.height, item.width);
+            var wireBoxFrame = _drawingUtility.DrawFrame(item.startX, item.startY, item.startZ, item.length, item.height, item.width, borderColor);
+            return wireBoxFrame;
+        }
 
         private void ConvertItemMeasurementsInCentimeters(LoadPlanItem item)
         {
@@ -153,6 +148,13 @@ namespace Ab3d.PowerToys.WinForms.Samples
             item.width = item.width / 10;
             item.height = item.height / 10;
             item.length = item.length / 10;
+        }
+
+        private void ConvertContainerMeasurementsInCentimeters(Container container)
+        {
+            container.length = container.length / 10;
+            container.width = container.width / 10;
+            container.height = container.height / 10;
         }
 
         private void SetUpWpf3D()
@@ -174,13 +176,10 @@ namespace Ab3d.PowerToys.WinForms.Samples
             _targetPositionCamera = new Ab3d.Cameras.TargetPositionCamera()
             {
                 TargetPosition = new Point3D(0, 0, 0),
-                Distance = 4000,
-                Heading = -60,
-                Attitude = -30,
                 ShowCameraLight = ShowCameraLightType.Always,
                 TargetViewport3D = _viewport3D
             };
-
+            SetTargetPositionCameraToDefaultView();
             _rootGrid.Children.Add(_targetPositionCamera);
 
 
@@ -217,12 +216,87 @@ namespace Ab3d.PowerToys.WinForms.Samples
             elementHost1.Child = _rootGrid;
         }
 
+        private void SetTargetPositionCameraToDefaultView()
+        {
+            //reset target position camera to default values
+            _targetPositionCamera.Heading = -60;
+            _targetPositionCamera.Attitude = -30;
+            _targetPositionCamera.Distance = 4000;
+        }
+
+
+        private void ExportAllProfilePng(Container container)
+        {
+            foreach (var orientation in Enum.GetValues(typeof(ProfileOrientation)))
+            {
+                //decrease distance and reset camera to original position
+                _targetPositionCamera.MoveTargetPositionTo(new Point3D(0, 0, 0), 0);
+                _targetPositionCamera.Distance = 2500;
+
+                switch (orientation)
+                {
+                    case ProfileOrientation.Right:
+                        _targetPositionCamera.Heading = -180;
+                        _targetPositionCamera.Attitude = 0;
+                        _targetPositionCamera.MoveLeft(container.length / 2);
+                        _targetPositionCamera.MoveUp(container.height / 2);
+                        break;
+                    case ProfileOrientation.Left:
+                        _targetPositionCamera.Heading = 0;
+                        _targetPositionCamera.Attitude = 0;
+                        _targetPositionCamera.MoveRight(container.length / 2);
+                        _targetPositionCamera.MoveUp(container.height / 2);
+                        break;
+                    case ProfileOrientation.Top:
+                        _targetPositionCamera.Heading = 0;
+                        _targetPositionCamera.Attitude = -90;
+                        _targetPositionCamera.MoveRight(container.length / 2);
+                        _targetPositionCamera.MoveDown(container.height / 2);
+                        break;
+                    case ProfileOrientation.Bottom:
+                        _targetPositionCamera.Heading = 0;
+                        _targetPositionCamera.Attitude = 90;
+                        _targetPositionCamera.MoveRight(container.length / 2);
+                        _targetPositionCamera.MoveUp(container.height / 2);
+                        break;
+                    case ProfileOrientation.Front:
+                        _targetPositionCamera.Heading = -90;
+                        _targetPositionCamera.Attitude = 0;
+                        _targetPositionCamera.MoveLeft(container.width / 2);
+                        _targetPositionCamera.MoveUp(container.height / 2);
+                        break;
+                    case ProfileOrientation.Rear:
+                        _targetPositionCamera.Heading = 90;
+                        _targetPositionCamera.Attitude = 0;
+                        _targetPositionCamera.MoveRight(container.width / 2);
+                        _targetPositionCamera.MoveUp(container.height / 2);
+                        break;
+                }
+
+                //redraw container and boxes, after moving the camera, the container and borders are missing
+                _viewport3D.Children.Clear();
+
+                _drawingUtility.DrawContainer(0.0, 0.0, 0.0, container.length, container.height, container.width);
+                foreach (var loadPlanStep in container.loadPlan.loadPlanSteps)
+                {
+                    foreach (var item in loadPlanStep.items)
+                    {
+                        var borderColor = System.Windows.Media.Color.FromRgb(0, 0, 0);
+                        DrawBoxAndFrame(borderColor, item);
+                    }
+                }
+
+                var imageName = container + "_" + orientation;
+                _drawingUtility.ExportToPng(requestNumber, container.name, imageName);
+            }
+        }  
+
         private void button1_Click(object sender, EventArgs e)
         {
             string fileName = "manualExport";
             string container = "Current";
             var drawingUtility = new DrawingUtility(_viewport3D, _configuration);
-            drawingUtility.exportToPng(requestNumber, container, fileName);
+            drawingUtility.ExportToPng(requestNumber, container, fileName);
         }
 
         private void animateButton_Click(object sender, EventArgs e)
@@ -234,16 +308,6 @@ namespace Ab3d.PowerToys.WinForms.Samples
         {
             foreach (var boxVisual3D in _viewport3D.Children.OfType<Ab3d.Visuals.BoxVisual3D>())
                 boxVisual3D.Material = _normalMaterial;
-        }
-
-        private static string readJsonRequest(string fileName)
-        {
-            using (StreamReader r = new StreamReader(fileName))
-            {
-
-                string json = r.ReadToEnd();
-                return json;
-            }
         }
     }
 }

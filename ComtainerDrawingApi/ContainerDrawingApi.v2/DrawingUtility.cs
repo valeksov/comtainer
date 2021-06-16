@@ -131,7 +131,7 @@ namespace ContainerDrawingApi
             _viewport3D.Children.Add(sideUpLine);
         }
 
-        public void exportToPng(string requestNumber, string containerName, string imageName)
+        public void ExportToPng(string requestNumber, string containerName, string imageName)
         {
             var bitmap = BitmapRendering.RenderToBitmap(_viewport3D, 1920, 1080);
 
@@ -150,8 +150,7 @@ namespace ContainerDrawingApi
             }
         }
 
-
-        public void saveResponseWithDimensions(string requestNumber, RootJsonObject request)
+        public void SaveResponseWithDimensions(string requestNumber, RootJsonObject request)
         {
             var subPath = $"{_configuration.GetValue<string>("ZipOutput")}\\{requestNumber}\\";
             bool exists = Directory.Exists(subPath);
@@ -165,7 +164,7 @@ namespace ContainerDrawingApi
             File.WriteAllText(subPath + jsonName, result);
         }
 
-        public void zipResultJsonAndPngs(string requestNumber, IEnumerable<string> containerNames, string outputPath)
+        public void ZipResultJsonAndPngs(string requestNumber, IEnumerable<string> containerNames, string outputPath)
         {
             string zipOutput = _configuration.GetValue<string>("ZipOutput");
 

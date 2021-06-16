@@ -10,18 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="Color.json" />
     <Content Remove="nlog.config" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="C:\Users\Yasen\.nuget\packages\nlog.config\4.7.10\contentFiles\any\any\NLog.config" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Color.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
