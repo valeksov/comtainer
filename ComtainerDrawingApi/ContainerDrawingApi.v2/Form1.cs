@@ -286,7 +286,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
                     }
                 }
 
-                var imageName = container + "_" + orientation;
+                var imageName = container.name + "_" + orientation;
                 _drawingUtility.ExportToPng(requestNumber, container.name, imageName);
             }
         }  
