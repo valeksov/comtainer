@@ -21,6 +21,7 @@ import com.developsoft.comtainer.rest.dto.ConfigDto;
 import com.developsoft.comtainer.rest.dto.ContainerDto;
 import com.developsoft.comtainer.rest.dto.ContainerLoadPlanDto;
 import com.developsoft.comtainer.runtime.comparators.ContainerVolumeComparator;
+import com.developsoft.comtainer.runtime.comparators.GroupTotalVolumeComparator;
 import com.developsoft.comtainer.runtime.model.CargoGroupRuntime;
 import com.developsoft.comtainer.runtime.model.CargoItemRuntime;
 import com.developsoft.comtainer.runtime.model.ContainerAreaRuntime;
@@ -96,6 +97,7 @@ public class PackagerService {
 		result.setStatus(0);
 		if (request.getContainers() != null && request.getContainers().size() > 0 && request.getGroups() != null && request.getGroups().size() > 0) {
 			final List<CargoGroupDto> newGroups = request.getGroups();
+			Collections.sort(newGroups, new GroupTotalVolumeComparator());
 			final List<CargoGroupDto> placedGroups =  new ArrayList<CargoGroupDto>();
 			final Map<String, CargoGroupDto> newPlacedGroupsMap = new HashMap<String, CargoGroupDto>();
 			final List<ContainerDto> availableContainers = new ArrayList<ContainerDto>(request.getContainers());
@@ -138,16 +140,18 @@ public class PackagerService {
 									lastPlacedSteps = newSteps;
 								} else {
 									//No need to attempt with Smaller Containers
-									printStats(source, lastPlacedSteps);
 									break;
 								}
 							}
 						}
-						loadPlans.add(createContainerWithLoadPlan(source, index, lastPlacedSteps));
+						final ContainerDto resultContainer = createContainerWithLoadPlan(source, index, lastPlacedSteps);
+						printStats(resultContainer, lastPlacedSteps);
+						loadPlans.add(resultContainer);
 						break;
 					} else {
-						printStats(availableContainers.get(0), placedSteps);
-						loadPlans.add(createContainerWithLoadPlan(availableContainers.get(0), index, placedSteps));
+						final ContainerDto nextResultContainer = createContainerWithLoadPlan(availableContainers.get(0), index, placedSteps);
+						printStats(nextResultContainer, placedSteps);
+						loadPlans.add(nextResultContainer);
 						index++;
 					}
 					if (!keepGroupsTogether) {
@@ -355,6 +359,10 @@ public class PackagerService {
 			final int floorPercent = (int) (100.0 * usedFloorArea / containerFloorArea);
 			System.out.println ("Volume used: " + usedVolume + "/" + containerVolume + " - " + volumePercent + "%");
 			System.out.println ("Floor area used: " + usedFloorArea + "/" + containerFloorArea + " - " + floorPercent + "%");
+			if (container.getLoadPlan() != null) {
+				container.getLoadPlan().setFloorAreaUsed(floorPercent);
+				container.getLoadPlan().setVolumeUsed(volumePercent);
+			}
 		}
 		
 	}
@@ -404,14 +412,14 @@ public class PackagerService {
 			final int width = step.getWidth();
 			final int height = step.getHeight();
 			ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
-																			step.getMaxLayer(), 0, 0, 0, length, width, height, false, skipCargoSupport, false);
+																			step.getMaxLayer(), 0, 0, 0, length, width, height, false, skipCargoSupport, false, null);
 			if (area != null) {
 //				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
 				return confirmStep(step, area, placedSteps);
 			} else {
 				//We will try to find place for rotated step (length becomes width and vise versa)
 				area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
-																			step.getMaxLayer(), 0, 0, 0, width, length, height, false, skipCargoSupport, false);
+																			step.getMaxLayer(), 0, 0, 0, width, length, height, false, skipCargoSupport, false, null);
 				if (area != null) {
 					final LoadPlanStepRuntime rotatedStep = step.createRotatedCopy();
 //					System.out.println ("Found Area for Rotated step: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());

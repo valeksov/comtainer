@@ -51,6 +51,14 @@ public class LoadPlanStepRuntime {
 		}
 		return false;
 	}
+	public boolean isGroupSelfStackable() {
+		for (final CargoItemPlacementRuntime placement : getPlacements()) {
+			if (placement.getItem().getGroup().getSource().isStackGroupOnly()) {
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	public LoadPlanStepRuntime createRotatedCopy() {
 		final int reverseDimension = getDimension() % 2 + 1;

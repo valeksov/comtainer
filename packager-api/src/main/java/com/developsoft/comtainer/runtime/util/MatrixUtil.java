@@ -3,6 +3,8 @@ package com.developsoft.comtainer.runtime.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.developsoft.comtainer.runtime.model.CargoGroupRuntime;
+import com.developsoft.comtainer.runtime.model.CargoItemPlacementRuntime;
 import com.developsoft.comtainer.runtime.model.ContainerAreaRuntime;
 import com.developsoft.comtainer.runtime.model.LoadPlanStepRuntime;
 
@@ -31,7 +33,7 @@ public class MatrixUtil {
 	public static ContainerAreaRuntime getFreeArea (final List<LoadPlanStepRuntime> steps, final ContainerAreaRuntime source, final float weight, final float supportWeight,
 														final float stepWeight, final boolean allowHeavierCargoOnTop, final Float maxHeavierCargoOnTop, 
 														final int maxLayers, final int x, final int y, final int z, final int length, final int width, final int height, 
-														final boolean skipZDImension, final boolean skipCargoSupport, final boolean skipStackable) {
+														final boolean skipZDImension, final boolean skipCargoSupport, final boolean skipStackable, final CargoGroupRuntime group) {
 		
 		final int endX = x + length;
 		final int endY = y + width;
@@ -57,7 +59,7 @@ public class MatrixUtil {
 					layer = maxUsedLayer + 1;
 				}
 				if (!checkStepsSupport(allIntersectingSteps, source.getCargoSupport(), weight, supportWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, 
-														x, y, length, width, skipCargoSupport, skipStackable)) {
+														x, y, length, width, skipCargoSupport, skipStackable, group)) {
 					return null;
 				}
 			}
@@ -72,20 +74,20 @@ public class MatrixUtil {
 			if (!skipZDImension) {
 				//1. Search for free area on top of the package
 				nextArea = getFreeArea(steps, source, weight, supportWeight, stepWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, maxLayers, 
-														x, y, intersectingStep.getEndZ(), length, width, height, skipZDImension, skipCargoSupport, skipStackable);
+														x, y, intersectingStep.getEndZ(), length, width, height, skipZDImension, skipCargoSupport, skipStackable, group);
 				if (nextArea != null) {
 					return nextArea;
 				}
 			}
 			//2.Search next following the width
 			nextArea = getFreeArea(steps, source, weight, supportWeight, stepWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, maxLayers, 
-														x, intersectingStep.getEndY(), z, length, width, height, skipZDImension, skipCargoSupport, skipStackable);
+														x, intersectingStep.getEndY(), z, length, width, height, skipZDImension, skipCargoSupport, skipStackable, group);
 			if (nextArea != null) {
 				return nextArea;
 			}
 			//3.Go next following the length
 			nextArea = getFreeArea(steps, source, weight, supportWeight, stepWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, maxLayers, 
-														intersectingStep.getEndX(), y,  z, length, width, height, skipZDImension, skipCargoSupport, skipStackable);
+														intersectingStep.getEndX(), y,  z, length, width, height, skipZDImension, skipCargoSupport, skipStackable, group);
 			if (nextArea != null) {
 				return nextArea;
 			}
@@ -105,7 +107,7 @@ public class MatrixUtil {
 	
 	private static boolean checkStepsSupport (final List<LoadPlanStepRuntime> intersectingSteps, final int cargoSupport, final float weight, final float supportWeight, 
 								final boolean allowHeavierCargoOnTop, final Float maxHeavierCargoOnTop, final int x, final int y, final int length, final int width, 
-								final boolean skipCargoSupport, final boolean skipStackable) {
+								final boolean skipCargoSupport, final boolean skipStackable, final CargoGroupRuntime group) {
 		final int targetSupportArea = skipCargoSupport ? length * width : Math.round(((float)cargoSupport) * ((float)length) * ((float)width) / 100);
 		int currentSupportArea = 0;
 		for (final LoadPlanStepRuntime step : intersectingSteps) {
@@ -117,6 +119,14 @@ public class MatrixUtil {
 			}
 			if (!skipStackable && step.isNotStackable()) {
 				return false;
+			}
+			if (skipStackable && group != null && step.isGroupSelfStackable()) {
+				for (final CargoItemPlacementRuntime nextStepPlacement : step.getPlacements()) {
+					if (nextStepPlacement.getItem() != null && nextStepPlacement.getItem().getGroup() != null 
+							&& !nextStepPlacement.getItem().getGroup().getSource().getId().equals(group.getSource().getId())) {
+						return false;
+					}
+				}
 			}
 			final int startX = Math.max(step.getStartX(), x);
 			final int startY = Math.max(step.getStartY(), y);

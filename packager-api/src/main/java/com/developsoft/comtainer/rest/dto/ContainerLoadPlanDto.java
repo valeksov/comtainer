@@ -9,6 +9,8 @@ import lombok.Setter;
 public class ContainerLoadPlanDto {
 
 	private String id;
+	private int volumeUsed;
+	private int floorAreaUsed;
 	private List<LoadPlanStepDto> loadPlanSteps;
 
 }
