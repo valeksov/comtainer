@@ -79,6 +79,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
                     //draw container
                     _viewport3D.Children.Clear();
                     ConvertContainerMeasurementsInCentimeters(container);
+                    SetTargetPositionCameraToDefaultView(container);
                     _drawingUtility.DrawContainer(0.0, 0.0, 0.0, container.length, container.height, container.width);
 
                     var borderColor = System.Windows.Media.Color.FromRgb(255, 255, 0);  //yellow
@@ -110,9 +111,6 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
                     //export 2d views - left, right, front, rear, top and bottom 
                     ExportAllProfilePng(container);
-
-                    //Return camera to default position for next container
-                   SetTargetPositionCameraToDefaultView();
                 }
 
                 _logger.LogInformation("Create zip file");
@@ -177,9 +175,9 @@ namespace Ab3d.PowerToys.WinForms.Samples
             {
                 TargetPosition = new Point3D(0, 0, 0),
                 ShowCameraLight = ShowCameraLightType.Always,
-                TargetViewport3D = _viewport3D
+                TargetViewport3D = _viewport3D,
+                Distance = 2500
             };
-            SetTargetPositionCameraToDefaultView();
             _rootGrid.Children.Add(_targetPositionCamera);
 
 
@@ -216,12 +214,19 @@ namespace Ab3d.PowerToys.WinForms.Samples
             elementHost1.Child = _rootGrid;
         }
 
-        private void SetTargetPositionCameraToDefaultView()
+        private void SetTargetPositionCameraToDefaultView(Container container)
         {
-            //reset target position camera to default values
+            //1. move camera to initial position
+            _targetPositionCamera.MoveTargetPositionTo(new Point3D(0, 0, 0), 0);
+
+            //initially the container will be positioned in the top right quarter of the picture and won't be rotated
+            //2. Position camera to the center for current container
+            _targetPositionCamera.MoveUp(container.height / 2);
+            _targetPositionCamera.MoveRight(container.length / 2);
+
+            //3. Rotate to default view
             _targetPositionCamera.Heading = -60;
             _targetPositionCamera.Attitude = -30;
-            _targetPositionCamera.Distance = 4000;
         }
 
 
@@ -229,9 +234,8 @@ namespace Ab3d.PowerToys.WinForms.Samples
         {
             foreach (var orientation in Enum.GetValues(typeof(ProfileOrientation)))
             {
-                //decrease distance and reset camera to original position
+                // reset camera to original position
                 _targetPositionCamera.MoveTargetPositionTo(new Point3D(0, 0, 0), 0);
-                _targetPositionCamera.Distance = 2500;
 
                 switch (orientation)
                 {
