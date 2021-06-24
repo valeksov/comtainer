@@ -93,6 +93,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
                             ConvertItemMeasurementsInCentimeters(item);
                             var wireBoxFrame = DrawBoxAndFrame(borderColor, item);
                             wireBoxFrames.Add(wireBoxFrame);
+                            _drawingUtility.MarkSideUp(item.orientation, item.startX, item.startY, item.startZ, item.length, item.height, item.width);
                         }
 
                         string pictureName = String.Concat(counter, '_', loadPlanStep.id.Substring(0, 8));
@@ -131,9 +132,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
         {
             Color color = ColorTranslator.FromHtml("#" + item.color);
             var mediaColor = System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
-
             _drawingUtility.DrawBox(item.startX, item.startY, item.startZ, item.length, item.height, item.width, mediaColor);
-            _drawingUtility.MarkSideUp(item.orientation, item.startX, item.startY, item.startZ, item.length, item.height, item.width);
             var wireBoxFrame = _drawingUtility.DrawFrame(item.startX, item.startY, item.startZ, item.length, item.height, item.width, borderColor);
             return wireBoxFrame;
         }
