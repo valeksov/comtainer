@@ -412,14 +412,14 @@ public class PackagerService {
 			final int width = step.getWidth();
 			final int height = step.getHeight();
 			ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
-																			step.getMaxLayer(), 0, 0, 0, length, width, height, false, skipCargoSupport, false, null);
+																			0, 0, 0, 0, length, width, height, false, skipCargoSupport, false, null);
 			if (area != null) {
 //				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
 				return confirmStep(step, area, placedSteps);
 			} else {
 				//We will try to find place for rotated step (length becomes width and vise versa)
 				area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
-																			step.getMaxLayer(), 0, 0, 0, width, length, height, false, skipCargoSupport, false, null);
+																			0, 0, 0, 0, width, length, height, false, skipCargoSupport, false, null);
 				if (area != null) {
 					final LoadPlanStepRuntime rotatedStep = step.createRotatedCopy();
 //					System.out.println ("Found Area for Rotated step: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
