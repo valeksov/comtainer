@@ -88,7 +88,26 @@ public class PackagerService {
 		return items.stream().map(sourceItem -> new CargoItemRuntime(sourceItem)).collect(Collectors.toList());
 	}
 	
+	private void fillRandomColors (final List<CargoGroupDto> groups) {
+		if (groups != null) {
+			for (final CargoGroupDto group : groups) {
+				if (group.getColor() == null || group.getColor().length() == 0) {
+					if (group.getItems() != null) {
+						for (final CargoItemDto item : group.getItems()) {
+							if (item.getColor() == null || item.getColor().length() == 0) {
+								item.setColor(randomColor());
+							}
+						}
+					}
+				}
+				if (group.getGroups() != null) {
+					fillRandomColors(group.getGroups());
+				}
+			}
+		}
+	}
 	public ComtainerResponseDto runLoadPlanner(final ComtainerRequestDto request) {
+		fillRandomColors(request.getGroups());
 		final ComtainerResponseDto result = new ComtainerResponseDto();
 		result.setConfig(request.getConfig());
 		result.setGroups(request.getGroups());
@@ -96,7 +115,7 @@ public class PackagerService {
 		result.setContainers(loadPlans);
 		result.setStatus(0);
 		if (request.getContainers() != null && request.getContainers().size() > 0 && request.getGroups() != null && request.getGroups().size() > 0) {
-			final List<CargoGroupDto> newGroups = request.getGroups();
+			final List<CargoGroupDto> newGroups = new ArrayList<CargoGroupDto>(request.getGroups());
 			Collections.sort(newGroups, new GroupTotalVolumeComparator());
 			final List<CargoGroupDto> placedGroups =  new ArrayList<CargoGroupDto>();
 			final Map<String, CargoGroupDto> newPlacedGroupsMap = new HashMap<String, CargoGroupDto>();
@@ -184,6 +203,7 @@ public class PackagerService {
 	}
 	
 	public ComtainerResponseDto run(final ComtainerRequestDto request) {
+		fillRandomColors(request.getGroups());
 		final ComtainerResponseDto result = new ComtainerResponseDto();
 		result.setConfig(request.getConfig());
 		result.setGroups(request.getGroups());
@@ -411,14 +431,16 @@ public class PackagerService {
 			final int length = step.getLength();
 			final int width = step.getWidth();
 			final int height = step.getHeight();
-			ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
+			ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, config.getMaxWeightDiffInPercent(), config.getMaxWeightDiffInKilos(), 
+																			step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
 																			0, 0, 0, 0, length, width, height, false, skipCargoSupport, false, null);
 			if (area != null) {
 //				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
 				return confirmStep(step, area, placedSteps);
 			} else {
 				//We will try to find place for rotated step (length becomes width and vise versa)
-				area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
+				area = MatrixUtil.getFreeArea(placedSteps, source, minWeight, config.getMaxWeightDiffInPercent(), config.getMaxWeightDiffInKilos(),
+																			step.getWeight(), config.isAllowHeavierCargoOnTop(), config.getMaxHeavierCargoOnTop(), 
 																			0, 0, 0, 0, width, length, height, false, skipCargoSupport, false, null);
 				if (area != null) {
 					final LoadPlanStepRuntime rotatedStep = step.createRotatedCopy();

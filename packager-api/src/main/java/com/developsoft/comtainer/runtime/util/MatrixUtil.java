@@ -30,8 +30,8 @@ public class MatrixUtil {
 		}
 		return result;
 	}
-	public static ContainerAreaRuntime getFreeArea (final List<LoadPlanStepRuntime> steps, final ContainerAreaRuntime source, final float weight, final float supportWeight,
-														final float stepWeight, final boolean allowHeavierCargoOnTop, final Float maxHeavierCargoOnTop, 
+	public static ContainerAreaRuntime getFreeArea (final List<LoadPlanStepRuntime> steps, final ContainerAreaRuntime source, final float weight, final Float supportWeightPercent,
+														final Float supportWeightKilos, final float stepWeight, final boolean allowHeavierCargoOnTop, final Float maxHeavierCargoOnTop, 
 														final int maxLayers, final int x, final int y, final int z, final int length, final int width, final int height, 
 														final boolean skipZDImension, final boolean skipCargoSupport, final boolean skipStackable, final CargoGroupRuntime group) {
 		
@@ -58,7 +58,7 @@ public class MatrixUtil {
 				} else {
 					layer = maxUsedLayer + 1;
 				}
-				if (!checkStepsSupport(allIntersectingSteps, source.getCargoSupport(), weight, supportWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, 
+				if (!checkStepsSupport(allIntersectingSteps, source.getCargoSupport(), weight, supportWeightPercent, supportWeightKilos, allowHeavierCargoOnTop, maxHeavierCargoOnTop, 
 														x, y, length, width, skipCargoSupport, skipStackable, group)) {
 					return null;
 				}
@@ -73,20 +73,20 @@ public class MatrixUtil {
 			ContainerAreaRuntime nextArea;
 			if (!skipZDImension) {
 				//1. Search for free area on top of the package
-				nextArea = getFreeArea(steps, source, weight, supportWeight, stepWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, maxLayers, 
+				nextArea = getFreeArea(steps, source, weight, supportWeightPercent, supportWeightKilos, stepWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, maxLayers, 
 														x, y, intersectingStep.getEndZ(), length, width, height, skipZDImension, skipCargoSupport, skipStackable, group);
 				if (nextArea != null) {
 					return nextArea;
 				}
 			}
 			//2.Search next following the width
-			nextArea = getFreeArea(steps, source, weight, supportWeight, stepWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, maxLayers, 
+			nextArea = getFreeArea(steps, source, weight, supportWeightPercent, supportWeightKilos, stepWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, maxLayers, 
 														x, intersectingStep.getEndY(), z, length, width, height, skipZDImension, skipCargoSupport, skipStackable, group);
 			if (nextArea != null) {
 				return nextArea;
 			}
 			//3.Go next following the length
-			nextArea = getFreeArea(steps, source, weight, supportWeight, stepWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, maxLayers, 
+			nextArea = getFreeArea(steps, source, weight, supportWeightPercent, supportWeightKilos, stepWeight, allowHeavierCargoOnTop, maxHeavierCargoOnTop, maxLayers, 
 														intersectingStep.getEndX(), y,  z, length, width, height, skipZDImension, skipCargoSupport, skipStackable, group);
 			if (nextArea != null) {
 				return nextArea;
@@ -105,7 +105,7 @@ public class MatrixUtil {
 		return result;
 	}
 	
-	private static boolean checkStepsSupport (final List<LoadPlanStepRuntime> intersectingSteps, final int cargoSupport, final float weight, final float supportWeight, 
+	private static boolean checkStepsSupport (final List<LoadPlanStepRuntime> intersectingSteps, final int cargoSupport, final float weight, final Float sWeightPercent, final Float sWeightKilos, 
 								final boolean allowHeavierCargoOnTop, final Float maxHeavierCargoOnTop, final int x, final int y, final int length, final int width, 
 								final boolean skipCargoSupport, final boolean skipStackable, final CargoGroupRuntime group) {
 		final int targetSupportArea = skipCargoSupport ? length * width : Math.round(((float)cargoSupport) * ((float)length) * ((float)width) / 100);
@@ -113,7 +113,13 @@ public class MatrixUtil {
 		for (final LoadPlanStepRuntime step : intersectingSteps) {
 			final boolean checkSupportWeight = allowHeavierCargoOnTop && maxHeavierCargoOnTop != null && maxHeavierCargoOnTop > 0 && weight > maxHeavierCargoOnTop;
 			if (!allowHeavierCargoOnTop || checkSupportWeight) {
+				final float supportWeight = 1 + (sWeightPercent != null ? sWeightPercent : 0)/100; 
 				if (step.getMaxSupportingWeight(supportWeight) < weight) {
+					return false;
+				}
+			}
+			if (sWeightKilos != null && sWeightKilos > 0) {
+				if (step.getMaxSupportingWeight(1) + sWeightKilos < weight) {
 					return false;
 				}
 			}

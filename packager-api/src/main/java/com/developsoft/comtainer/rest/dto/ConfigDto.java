@@ -10,4 +10,7 @@ public class ConfigDto {
 	private boolean allowHeavierCargoOnTop;
 	private Float maxHeavierCargoOnTop;
 	private boolean keepGroupsTogether;
+	private Float maxWeightDiffInPercent;
+	private Float maxWeightDiffInKilos;
+
 }

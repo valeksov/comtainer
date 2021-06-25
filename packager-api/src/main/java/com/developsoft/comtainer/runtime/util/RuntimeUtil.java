@@ -77,7 +77,8 @@ public class RuntimeUtil {
 			final int length = step.getLength();
 			final int width = step.getWidth();
 			final int height = step.getHeight();
-			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight , 1.08f, step.getWeight(), config.isAllowHeavierCargoOnTop(), 
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(placedSteps, source, minWeight , config.getMaxWeightDiffInPercent(), config.getMaxWeightDiffInKilos(),
+																	step.getWeight(), config.isAllowHeavierCargoOnTop(), 
 																	config.getMaxHeavierCargoOnTop(), 0, 0, 0, 0, length, width, height, true, true, true, item.getGroup());
 			if (area != null) {
 //				System.out.println ("Found Area: X=" + area.getStartX() + ", Y=" + area.getStartY() + ", Z=" + area.getStartZ());
@@ -113,7 +114,8 @@ public class RuntimeUtil {
 			final int height = placement.getHeight();
 			//final boolean skipZ = calculateSkipZ(item, config.getLightUnstackableWeightLimit());
 			final boolean skipStackable = item.getWeight() <= config.getLightUnstackableWeightLimit();
-			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, placement.getItem().getWeight(), config.isAllowHeavierCargoOnTop(),  
+			final ContainerAreaRuntime area = MatrixUtil.getFreeArea(steps, source, item.getWeight(), config.getMaxWeightDiffInPercent(), config.getMaxWeightDiffInKilos(), 
+														placement.getItem().getWeight(), config.isAllowHeavierCargoOnTop(),  
 														config.getMaxHeavierCargoOnTop(), 0, 0, 0, 0, length, width, height, false, false, skipStackable, item.getGroup());
 			if (area != null) {
 				return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ(), area.getLayer());
@@ -168,7 +170,8 @@ public class RuntimeUtil {
 										final int width = placement.getWidth();
 										final int height = placement.getHeight();
 										final ContainerAreaRuntime area = 
-											MatrixUtil.getFreeArea(steps, source, item.getWeight(), 1.08f, placement.getItem().getWeight(), config.isAllowHeavierCargoOnTop(), 
+											MatrixUtil.getFreeArea(steps, source, item.getWeight(), config.getMaxWeightDiffInPercent(), config.getMaxWeightDiffInKilos(),
+																			placement.getItem().getWeight(), config.isAllowHeavierCargoOnTop(), 
 																			config.getMaxHeavierCargoOnTop(), 0, startX, startY, startZ, length, width, height, true, true, true, null);
 										if (area != null) {
 											return confirmNewStep(placement, area.getStartX(), area.getStartY(), area.getStartZ(), area.getLayer());
