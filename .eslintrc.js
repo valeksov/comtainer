@@ -1,0 +1,23 @@
+module.exports = {
+    root: true,
+    extends: ['airbnb', 'airbnb/hooks'],
+    rules: {
+        indent: ['error', 4],
+        quotes: ['error', 'single'],
+        semi: ['error', 'always'],
+        'comma-dangle': 0,
+        'import/extensions': 0,
+        'react/jsx-indent': ['error', 4],
+        'max-len': ['error', { code: 120 }],
+        'linebreak-style': ['error', 'unix'],
+        'arrow-parens': ['error', 'as-needed'],
+        'react/jsx-filename-extension': [1, { extensions: ['.js', '.jsx', '.ts', '.tsx'] }],
+    },
+    settings: {
+        'import/resolver': {
+            node: {
+                extensions: ['.js', '.jsx', '.ts', '.tsx'],
+            },
+        },
+    },
+};
