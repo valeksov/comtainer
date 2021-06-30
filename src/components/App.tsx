@@ -37,11 +37,11 @@ function App() {
                         convertedXlsToJson.containers.push({
                             id: col['id'],
                             name: col['name'],
-                            length: col['length (mm)'],
-                            width: col['width  (mm)'],
-                            height: col['height (mm)'],
-                            maxAllowedVolume: col['maxAllowedVolume (mm3)'],
-                            maxAllowedWeight: col['maxAllowedWeigth (kg)'],
+                            length: col['length_(mm)'],
+                            width: col['width_(mm)'],
+                            height: col['height_(mm)'],
+                            maxAllowedVolume: col['maxAllowedVolume_(mm3)'],
+                            maxAllowedWeight: col['maxAllowedWeigth_(kg)'],
                             loadPlan: null,
                         });
                     });
@@ -59,8 +59,6 @@ function App() {
                         maxHeavierCargoOnTop: rowData[0]['maxHeavierCargoOnTop'],
                         keepGroupsTogether: rowData[0]['keepGroupsTogether'],
                     };
-
-                    console.log({ rowData, convertedXlsToJson });
                 }
 
                 // if (sheet === 'Containers') {
