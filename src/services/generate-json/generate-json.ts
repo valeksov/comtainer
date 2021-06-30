@@ -100,79 +100,109 @@ class GenerateJSONFromXlsService {
         return containers;
     };
 
+    generateItem = row => {
+        return {
+            id: row.itemId,
+            name: row.itemName,
+            length: row['length_(mm)'],
+            width: row['width_(mm)'],
+            height: row['height_(mm)'],
+            weight: row['weight_(kg)'],
+            quantity: row.quantity,
+            cargoStyle: row.cargoStyle,
+            rotatable: row.rotatable,
+            stackable: row.stackable,
+            color: row.color ? `#${row.color}` : null,
+            selfStackable: row.selfStackable,
+        };
+    };
+
     generateGroups = (rows): Array<Group> => {
         const groups = [];
 
+        // Stores the group data in the following format {'groupId1': 'groupDataObj1', 'groupId2: 'groupDataObj2'}.
         const groupsMap = new Map();
-        const aliasMap = new Map();
+        // Stores the alias groups data in the following format
+        // {'groupAliasId1': ['groupId1', 'groupId1'], 'groupAliasId2: ['groupId1']}.
+        const aliasGroups = {};
 
-        rows.forEach(rowData => {
-            // Check for alias groups and store rowData for each alias group.
-            if (rowData.groupAlias) {
-                if (!aliasMap.has(rowData.groupAlias)) {
-                    aliasMap.set(rowData.groupAlias, [{ ...rowData }]);
-                }
+        rows.forEach(row => {
+            const isGroupAlreadyInMap = groupsMap.has(row.groupId);
 
-                if (aliasMap.has(rowData.groupAlias)) {
-                    const copiedData = cloneDeep(aliasMap.get(rowData.groupAlias));
-                    aliasMap.set(rowData.groupAlias, [...copiedData, { ...rowData }]);
-                }
-            }
-
-            // There is no such group - create new one.
-            if (!groupsMap.has(rowData.groupId)) {
-                groupsMap.set(rowData.groupId, {
-                    id: rowData.groupId,
-                    name: rowData.groupName,
-                    items: [
-                        {
-                            id: rowData.itemId,
-                            name: rowData.itemName,
-                            length: rowData['length_(mm)'],
-                            width: rowData['width_(mm)'],
-                            height: rowData['height_(mm)'],
-                            weight: rowData['weight_(kg)'],
-                            quantity: rowData.quantity,
-                            cargoStyle: rowData.cargoStyle,
-                            rotatable: rowData.rotatable,
-                            stackable: rowData.stackable,
-                            color: rowData.color ? `#${rowData.color}` : null,
-                            selfStackable: rowData.selfStackable,
-                        },
-                    ],
+            // Add new group to groupsMap.
+            if (!isGroupAlreadyInMap) {
+                groupsMap.set(row.groupId, {
+                    id: row.groupId,
+                    name: row.groupName,
+                    items: [this.generateItem(row)],
                     color: null,
-                    stackGroupOnly: rowData.stackGroupOnly,
-                    alreadyLoaded: rowData.alreadyLoaded,
+                    stackGroupOnly: row.stackGroupOnly,
+                    alreadyLoaded: row.alreadyLoaded,
                 });
             }
 
-            // There already is such a group - update the group items data.
-            if (groupsMap.has(rowData.groupId)) {
-                const groupData = groupsMap.get(rowData.groupId);
+            // Update the group data for groupsMap.
+            if (isGroupAlreadyInMap) {
+                const groupData = cloneDeep(groupsMap.get(row.groupId));
 
-                groupsMap.set(rowData.groupId, {
+                groupsMap.set(row.groupId, {
                     ...groupData,
-                    items: [
-                        ...groupData.items,
-                        {
-                            id: rowData.itemId,
-                            name: rowData.itemName,
-                            length: rowData['length_(mm)'],
-                            width: rowData['width_(mm)'],
-                            height: rowData['height_(mm)'],
-                            weight: rowData['weight_(kg)'],
-                            quantity: rowData.quantity,
-                            cargoStyle: rowData.cargoStyle,
-                            rotatable: rowData.rotatable,
-                            stackable: rowData.stackable,
-                            selfStackable: rowData.selfStackable,
-                        },
-                    ],
+                    items: [...groupData.items, this.generateItem(row)],
                 });
+            }
+
+            // TODO vasko - export the aliasGroups generating to different function.
+            // Store alias groups data in aliasGroups object if there are any alias groups.
+            if (row.groupAlias) {
+                const isAlreadyInAliasGroups = Boolean(aliasGroups[row.groupAlias]);
+
+                // Add new alias group to the aliasGroup object.
+                if (!isAlreadyInAliasGroups) {
+                    aliasGroups[row.groupAlias] = [row.groupId];
+                }
+
+                if (isAlreadyInAliasGroups) {
+                    const groupIds = [...aliasGroups[row.groupAlias]];
+
+                    // Check if the groupId is already in the alias group as we don't need duplicated group ids.
+                    // If it's not in the alias group - add it.
+                    if (!groupIds.includes(row.groupId)) {
+                        aliasGroups[row.groupAlias] = [...groupIds, row.groupId];
+                    }
+                }
             }
         });
 
         // Get the alias groups in here.
+        const hasAliasGroups = Boolean(Object.keys(aliasGroups).length);
+
+        if (hasAliasGroups) {
+            // Iterate the alias groups.
+            Object.entries(aliasGroups).forEach(([key, value]) => {
+                const currentAliasGroup = aliasGroups[key];
+                const regularGroups = [];
+
+                // Get all regular groups that are included in the alias group.
+                currentAliasGroup.forEach(g => {
+                    const regularGroup = groupsMap.get(g);
+                    regularGroups.push(regularGroup);
+                    groupsMap.delete(g);
+                });
+
+                // Create new alias group.
+                const group = {
+                    id: key,
+                    name: 'hard coded',
+                    items: [],
+                    color: null,
+                    stackGroupOnly: false,
+                    alreadyLoaded: false,
+                    groups: cloneDeep(regularGroups),
+                };
+
+                groupsMap.set(group.id, { ...group });
+            });
+        }
 
         // Get final group values.
         for (const value of groupsMap.values()) {
