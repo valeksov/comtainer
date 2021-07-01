@@ -1,6 +1,15 @@
 import cloneDeep from 'clone-deep';
 import XLSX, { Sheet, WorkBook, WorkSheet } from 'xlsx';
-import { Config, Container, ConvertedXlsDto, Group, Item, SheetOptions } from './generate-json.types';
+import {
+    AliasGroup,
+    Config,
+    Container,
+    ConvertedXlsDto,
+    Group,
+    Item,
+    RegularGroup,
+    SheetOptions,
+} from './generate-json.types';
 import { getConvertedRowValue, getTransformedCargoData } from './generate-json.utils';
 
 type GenericAliasGroupObject = { [key: string]: Array<string | number> };
@@ -27,24 +36,27 @@ class GenerateJSONFromXlsService {
 
             // Add new group to groupsMap.
             if (!isGroupAlreadyInMap) {
-                groupsMap.set(row.groupId, {
+                const group: RegularGroup = {
                     id: row.groupId,
                     name: row.groupName,
                     items: [this.generateItem(row)],
                     color: null,
                     stackGroupOnly: row.stackGroupOnly,
-                    alreadyLoaded: row.alreadyLoaded,
-                });
+                    alreadyLoaded: false,
+                };
+
+                groupsMap.set(row.groupId, group);
             }
 
             // Update the group data for groupsMap.
             if (isGroupAlreadyInMap) {
-                const groupData = cloneDeep(groupsMap.get(row.groupId));
+                const group = cloneDeep(groupsMap.get(row.groupId));
+                const updatedGroup: RegularGroup = {
+                    ...group,
+                    items: [...group.items, this.generateItem(row)],
+                };
 
-                groupsMap.set(row.groupId, {
-                    ...groupData,
-                    items: [...groupData.items, this.generateItem(row)],
-                });
+                groupsMap.set(row.groupId, updatedGroup);
             }
         });
 
@@ -143,40 +155,41 @@ class GenerateJSONFromXlsService {
         const groupsMap: Map<number | string, Group> = this.getGroupsDataMap(rows);
         const aliasGroups: GenericAliasGroupObject = this.getAliasGroupDataObject(rows);
 
-        // Get the alias groups in here.
         const hasAliasGroups = Boolean(Object.keys(aliasGroups).length);
 
+        // Check if we have alias groups in the sheet.
         if (hasAliasGroups) {
             // Iterate the alias groups.
             Object.entries(aliasGroups).forEach(([key, value]) => {
                 const currentAliasGroup = aliasGroups[key];
                 const regularGroups = [];
 
-                // Get all regular groups that are included in the alias group.
+                // Get all regular groups that are included in the alias group. Add them to regularGroups list
+                // and remove them from groupsMap, as they are no longer considered as a spearate groups but
+                // will be placed under in the new alias group in the groups list property.
                 currentAliasGroup.forEach(g => {
-                    console.log({ groupsMap, g });
-
                     const regularGroup = groupsMap.get(g);
                     regularGroups.push(regularGroup);
                     groupsMap.delete(g);
                 });
 
                 // Create new alias group.
-                const group = {
+                const group: AliasGroup = {
                     id: key,
-                    name: 'hard coded',
+                    name: key,
                     items: [],
                     color: null,
+                    groups: cloneDeep(regularGroups),
                     stackGroupOnly: false,
                     alreadyLoaded: false,
-                    groups: cloneDeep(regularGroups),
                 };
 
+                // Add the alias group to groupsMap.
                 groupsMap.set(group.id, { ...group });
             });
         }
 
-        // Get final group values.
+        // Get final group values as an array.
         for (const value of groupsMap.values()) {
             groups.push(value);
         }

@@ -13,7 +13,7 @@ export type Item = {
     selfStackable: boolean;
 };
 
-type RegularGroup = {
+export type RegularGroup = {
     id: string;
     name: string;
     items: Array<Item>;
@@ -22,7 +22,7 @@ type RegularGroup = {
     alreadyLoaded: boolean;
 };
 
-type AliasGroup = {
+export type AliasGroup = {
     id: string;
     name: string;
     items: Array<Item>;
