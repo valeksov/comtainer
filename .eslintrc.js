@@ -6,6 +6,7 @@ module.exports = {
         quotes: ['error', 'single'],
         semi: ['error', 'always'],
         'comma-dangle': 0,
+        'import/no-unresolved': 'off',
         'no-unused-vars': 'off',
         'dot-notation': 'off',
         'object-curly-newline': 'off',

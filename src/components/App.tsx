@@ -1,7 +1,7 @@
 import { Button, Input } from '@material-ui/core';
 import React, { useCallback, useState } from 'react';
+import { GenerateJSONFromXls } from 'services/generate-json';
 import XLSX from 'xlsx';
-import { GenerateJSONFromXls } from '../services/generate-json';
 import styles from './styles/App.module.scss';
 
 function App() {
