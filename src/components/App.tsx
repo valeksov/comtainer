@@ -22,6 +22,7 @@ function App() {
         fileReader.onload = async event => {
             const fileData = event.target.result;
             const finalJSON = GenerateJSONFromXls.generateFinalJSON(XLSX.read(fileData, { type: 'binary' }));
+            console.log({ finalJSON });
             // TODO vasko - uncomment if we need the functionality to download the json data as a .json file.
             // exportToJson(finalJSON);
         };

@@ -1,4 +1,4 @@
-type Item = {
+export type Item = {
     id: string;
     name: string;
     length: number;
@@ -9,6 +9,7 @@ type Item = {
     cargoStyle: number;
     rotatable: boolean;
     stackable: boolean;
+    color: string | null;
     selfStackable: boolean;
 };
 
@@ -62,4 +63,9 @@ export enum SheetOptions {
     Config = 'Config',
     Containers = 'Containers',
     Cargos = 'Cargos',
+}
+
+export enum StringifiedBooleanOptions {
+    True = 'true',
+    False = 'false',
 }
