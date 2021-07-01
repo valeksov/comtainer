@@ -37,8 +37,8 @@ class GenerateJSONFromXlsService {
             // Add new group to groupsMap.
             if (!isGroupAlreadyInMap) {
                 const group: RegularGroup = {
-                    id: row.groupId,
-                    name: row.groupName,
+                    id: row.groupId.toString(),
+                    name: row.groupName.toString(),
                     items: [this.generateItem(row)],
                     color: null,
                     stackGroupOnly: row.stackGroupOnly,
@@ -96,8 +96,8 @@ class GenerateJSONFromXlsService {
 
     generateItem = (row: Sheet): Item => {
         return {
-            id: row.itemId,
-            name: row.itemName,
+            id: row.itemId.toString(),
+            name: row.itemName.toString(),
             length: row['length_(mm)'],
             width: row['width_(mm)'],
             height: row['height_(mm)'],
@@ -106,8 +106,9 @@ class GenerateJSONFromXlsService {
             cargoStyle: row.cargoStyle,
             rotatable: row.rotatable,
             stackable: row.stackable,
-            color: row.color ? `#${row.color}` : null,
+            color: row.color || null,
             selfStackable: row.selfStackable,
+            maxLayer: row.maxLayer,
         };
     };
 
@@ -124,6 +125,8 @@ class GenerateJSONFromXlsService {
             cargoSupport: row['cargoSupport'],
             lightUnstackableWeightLimit: row['lightUnstackableWeightLimit'],
             maxHeavierCargoOnTop: row['maxHeavierCargoOnTop'],
+            maxWeightDiffInPercent: row['maxWeightDiffInPercent'],
+            maxWeightDiffInKilos: row['maxWeightDiffInKilos'],
             allowHeavierCargoOnTop: getConvertedRowValue(row['allowHeavierCargoOnTop']),
             keepGroupsTogether: getConvertedRowValue(row['keepGroupsTogether']),
         };
@@ -135,8 +138,8 @@ class GenerateJSONFromXlsService {
 
         clonedRows.forEach(row => {
             containers.push({
-                id: row['id'],
-                name: row['name'],
+                id: row['id'].toString(),
+                name: row['name'].toString(),
                 length: row['length_(mm)'],
                 width: row['width_(mm)'],
                 height: row['height_(mm)'],
@@ -175,8 +178,8 @@ class GenerateJSONFromXlsService {
 
                 // Create new alias group.
                 const group: AliasGroup = {
-                    id: key,
-                    name: key,
+                    id: key.toString(),
+                    name: key.toString(),
                     items: [],
                     color: null,
                     groups: cloneDeep(regularGroups),

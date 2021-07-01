@@ -10,6 +10,7 @@ export type Item = {
     rotatable: boolean;
     stackable: boolean;
     color: string | null;
+    maxLayer: number;
     selfStackable: boolean;
 };
 
@@ -47,6 +48,8 @@ export type Config = {
     cargoSupport: number;
     lightUnstackableWeightLimit: number;
     maxHeavierCargoOnTop: number;
+    maxWeightDiffInPercent: number;
+    maxWeightDiffInKilos: number;
     allowHeavierCargoOnTop: boolean;
     keepGroupsTogether: boolean;
 };
