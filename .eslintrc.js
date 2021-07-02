@@ -19,7 +19,7 @@ module.exports = {
         'import/extensions': 0,
         'react/jsx-indent': ['error', 4],
         'max-len': ['error', { code: 120 }],
-        'linebreak-style': ['error', 'unix'],
+        'linebreak-style': ['error', 'windows'],
         'arrow-parens': ['error', 'as-needed'],
         'react/jsx-filename-extension': [1, { extensions: ['.js', '.jsx', '.ts', '.tsx'] }],
     },
