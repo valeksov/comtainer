@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
-import { Home } from './pages/Home';
+import { Home } from 'components/pages/Home';
 
 function App() {
     return (

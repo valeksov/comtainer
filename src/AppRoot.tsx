@@ -1,4 +1,4 @@
-import App from 'components/App';
+import App from 'App';
 import React from 'react';
 import { StoreProvider } from 'store/StoreProvider';
 
