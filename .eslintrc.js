@@ -15,6 +15,7 @@ module.exports = {
         'arrow-body-style': 'off',
         'no-restricted-syntax': 'off',
         'operator-linebreak': 'off',
+        'react-hooks/exhaustive-deps': 'off',
         'prefer-destructuring': ['error', { object: false, array: false }],
         'import/extensions': 0,
         'react/jsx-indent': ['error', 4],

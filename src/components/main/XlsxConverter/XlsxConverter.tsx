@@ -1,11 +1,14 @@
 import { Button, Input } from '@material-ui/core';
 import React, { useCallback, useState } from 'react';
 import { GenerateJSONFromXls } from 'services/generate-json';
+import { useRootStore } from 'store/StoreProvider';
 import { exportToJson } from 'utils';
 import XLSX from 'xlsx';
 import styles from './XlsxConverter.module.scss';
 
 const XlsxConverterComponent = () => {
+    const { generalStore } = useRootStore();
+
     const [selectedFile, setSelectedFile] = useState(null);
 
     const handleFileUpload = e => {
@@ -24,6 +27,7 @@ const XlsxConverterComponent = () => {
             const fileData = event.target.result;
             const finalJSON = GenerateJSONFromXls.generateFinalJSON(XLSX.read(fileData, { type: 'binary' }));
             exportToJson(finalJSON);
+            generalStore.showSuccessMessage('XLSX file is successfully converted!');
         };
     }, [selectedFile]);
 

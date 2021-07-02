@@ -1,12 +1,15 @@
-import { XlsxConverter } from 'components/main/XlsxConverter';
 import React from 'react';
-import styles from './App.module.scss';
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import 'react-toastify/dist/ReactToastify.css';
+import { Home } from './pages/Home';
 
 function App() {
     return (
-        <div className={styles.container}>
-            <XlsxConverter />
-        </div>
+        <BrowserRouter>
+            <Switch>
+                <Route path="/" exact component={Home} />
+            </Switch>
+        </BrowserRouter>
     );
 }
 
