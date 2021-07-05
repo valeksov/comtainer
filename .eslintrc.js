@@ -15,6 +15,8 @@ module.exports = {
         'arrow-body-style': 'off',
         'no-restricted-syntax': 'off',
         'operator-linebreak': 'off',
+        'max-classes-per-file': 'off',
+        'lines-between-class-members': 'off',
         'react-hooks/exhaustive-deps': 'off',
         'prefer-destructuring': ['error', { object: false, array: false }],
         'import/extensions': 0,

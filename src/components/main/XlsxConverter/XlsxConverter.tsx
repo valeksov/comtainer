@@ -7,8 +7,7 @@ import XLSX from 'xlsx';
 import styles from './XlsxConverter.module.scss';
 
 const XlsxConverterComponent = () => {
-    const { generalStore } = useRootStore();
-
+    const { generalStore, containersStore } = useRootStore();
     const [selectedFile, setSelectedFile] = useState(null);
 
     const handleFileUpload = e => {
@@ -26,8 +25,13 @@ const XlsxConverterComponent = () => {
         fileReader.onload = async event => {
             const fileData = event.target.result;
             const finalJSON = GenerateJSONFromXls.generateFinalJSON(XLSX.read(fileData, { type: 'binary' }));
+
+            // Export the json file.
             exportToJson(finalJSON);
             generalStore.showSuccessMessage('XLSX file is successfully converted!');
+
+            // Call the backend service to receive the zipped file with the load plan.
+            containersStore.getLoadingPlan(finalJSON);
         };
     }, [selectedFile]);
 

@@ -1,3 +1,5 @@
+export const LOAD_PLAN_URL = 'https://containerdrawingapi-v2.conveyor.cloud/api/drawing/post';
+
 export const COLORS = {
     white: '#ffffff',
     black: '#000000',
