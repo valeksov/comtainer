@@ -16,9 +16,9 @@ export class ContainersStore {
         makeAutoObservable(this);
     }
 
-    getLoadingPlan = async (jsonFile): Promise<void> => {
+    getLoadingPlan = async jsonFile => {
         const response = await this.containersApi.fetchLoadPlan(jsonFile);
-        console.log({ response });
+        return response;
     };
 
     // Leave code block for future reference.

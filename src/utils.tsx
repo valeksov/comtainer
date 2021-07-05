@@ -15,3 +15,14 @@ export const exportToJson = (objectData, fileName = 'file') => {
         document.body.removeChild(a);
     }
 };
+
+export const downloadZipFile = (responseBody, fileName = 'result') => {
+    const dataStr = "data:application/zip;" + responseBody;
+    const downloadElement = document.createElement('a');
+
+    downloadElement.setAttribute("href", dataStr);
+    downloadElement.setAttribute("download", fileName + ".zip");
+    document.body.appendChild(downloadElement); 
+    downloadElement.click();
+    downloadElement.remove();
+}

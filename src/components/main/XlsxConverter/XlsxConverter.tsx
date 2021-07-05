@@ -2,7 +2,7 @@ import { Button, Input } from '@material-ui/core';
 import React, { useCallback, useState } from 'react';
 import { GenerateJSONFromXls } from 'services/generate-json';
 import { useRootStore } from 'store/StoreProvider';
-import { exportToJson } from 'utils';
+import { downloadZipFile, exportToJson } from 'utils';
 import XLSX from 'xlsx';
 import styles from './XlsxConverter.module.scss';
 
@@ -27,11 +27,14 @@ const XlsxConverterComponent = () => {
             const finalJSON = GenerateJSONFromXls.generateFinalJSON(XLSX.read(fileData, { type: 'binary' }));
 
             // Export the json file.
-            exportToJson(finalJSON);
-            generalStore.showSuccessMessage('XLSX file is successfully converted!');
+            // exportToJson(finalJSON);
+            generalStore.showSuccessMessage(
+                'XLSX file is successfully converted! Please wait for the zipped files to start downloading!'
+            );
 
             // Call the backend service to receive the zipped file with the load plan.
-            containersStore.getLoadingPlan(finalJSON);
+            const zipResponse = await containersStore.getLoadingPlan(finalJSON);
+            downloadZipFile(zipResponse);
         };
     }, [selectedFile]);
 
