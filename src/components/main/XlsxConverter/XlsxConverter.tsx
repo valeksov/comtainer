@@ -1,20 +1,11 @@
 import { Button, Input } from '@material-ui/core';
 import React, { useCallback, useState } from 'react';
 import { GenerateJSONFromXls } from 'services/generate-json';
+import { ConvertedXlsDto } from 'services/generate-json/generate-json.types';
 import { useRootStore } from 'store/StoreProvider';
-import { downloadZipFile, exportToJson } from 'utils';
+import { exportToFile } from 'utils';
 import XLSX from 'xlsx';
 import styles from './XlsxConverter.module.scss';
-
-const cleanString = input => {
-    let output = '';
-    for (let i = 0; i < input.length; i++) {
-        if (input.charCodeAt(i) <= 127) {
-            output += input.charAt(i);
-        }
-    }
-    return output;
-};
 
 const XlsxConverterComponent = () => {
     const { generalStore, containersStore } = useRootStore();
@@ -34,17 +25,18 @@ const XlsxConverterComponent = () => {
 
         fileReader.onload = async event => {
             const fileData = event.target.result;
-            const finalJSON = GenerateJSONFromXls.generateFinalJSON(XLSX.read(fileData, { type: 'binary' }));
+            const jsonObject: ConvertedXlsDto = GenerateJSONFromXls.generateFinalJSON(
+                XLSX.read(fileData, { type: 'binary' })
+            );
 
-            // Export the parsed json file.
-            // exportToJson(finalJSON);
             generalStore.showSuccessMessage(
-                'XLSX file is successfully converted! Please wait for the zipped files to start downloading!'
+                `The input file is successfully converted!
+                Please wait for the exported zip file to start downloading!`
             );
 
             // Get the load plan data.
-            const loadPlanResponse = await containersStore.getLoadingPlan(finalJSON);
-            downloadZipFile(cleanString(loadPlanResponse.data), loadPlanResponse.headers['content-type'], 'load-plan');
+            const loadPlan = await containersStore.getLoadPlan(jsonObject);
+            exportToFile(loadPlan.data, 'loadPlan', 'zip');
         };
     }, [selectedFile]);
 

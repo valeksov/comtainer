@@ -1,5 +1,6 @@
 import { ContainersApi } from 'api/ContainersAPI';
 import { makeAutoObservable } from 'mobx';
+import { ConvertedXlsDto } from 'services/generate-json/generate-json.types';
 import { RootStore } from '../root-store';
 
 export class ContainersStore {
@@ -11,13 +12,15 @@ export class ContainersStore {
             generalStore: { containersApi },
         } = rootStore;
 
-        this.containersApi = containersApi;
         this.rootStore = rootStore;
+        this.containersApi = containersApi;
+
         makeAutoObservable(this);
     }
 
-    getLoadingPlan = async jsonFile => {
-        const response = await this.containersApi.fetchLoadPlan(jsonFile);
+    getLoadPlan = async (jsonObject: ConvertedXlsDto) => {
+        const response = await this.containersApi.getLoadPlan(jsonObject);
+        if (!response) return;
         return response;
     };
 
