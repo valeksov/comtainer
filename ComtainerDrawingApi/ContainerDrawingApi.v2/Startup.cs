@@ -26,6 +26,18 @@ namespace ContainerDrawingApi.v2
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers().AddNewtonsoftJson();
+
+            // Default Policy  
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.WithOrigins("https://containerdrawingapi-v2.conveyor.cloud/", "http://localhost:36023")
+                                            .AllowAnyHeader()
+                                            .AllowAnyMethod();
+                    });
+            });
         }
 
 
@@ -41,6 +53,14 @@ namespace ContainerDrawingApi.v2
             //app.Map("/api", builder => builder.UseMvc());
 
             app.UseRouting();
+
+            app.UseCors(builder =>
+            {
+                builder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+            });
 
             app.UseAuthorization();
 
