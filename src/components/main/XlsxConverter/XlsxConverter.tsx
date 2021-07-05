@@ -6,6 +6,16 @@ import { downloadZipFile, exportToJson } from 'utils';
 import XLSX from 'xlsx';
 import styles from './XlsxConverter.module.scss';
 
+const cleanString = input => {
+    let output = '';
+    for (let i = 0; i < input.length; i++) {
+        if (input.charCodeAt(i) <= 127) {
+            output += input.charAt(i);
+        }
+    }
+    return output;
+};
+
 const XlsxConverterComponent = () => {
     const { generalStore, containersStore } = useRootStore();
     const [selectedFile, setSelectedFile] = useState(null);
@@ -34,7 +44,7 @@ const XlsxConverterComponent = () => {
 
             // Get the load plan data.
             const loadPlanResponse = await containersStore.getLoadingPlan(finalJSON);
-            downloadZipFile(loadPlanResponse?.data, loadPlanResponse?.headers['content-type'], 'load-plan');
+            downloadZipFile(cleanString(loadPlanResponse.data), loadPlanResponse.headers['content-type'], 'load-plan');
         };
     }, [selectedFile]);
 

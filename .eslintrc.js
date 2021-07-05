@@ -18,6 +18,7 @@ module.exports = {
         'max-classes-per-file': 'off',
         'lines-between-class-members': 'off',
         'react-hooks/exhaustive-deps': 'off',
+        'no-plusplus': 'off',
         'prefer-destructuring': ['error', { object: false, array: false }],
         'import/extensions': 0,
         'react/jsx-indent': ['error', 4],
