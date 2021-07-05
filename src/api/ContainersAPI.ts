@@ -1,3 +1,4 @@
+import Axios from 'axios';
 import { LOAD_PLAN_URL } from '../constants';
 import { APIUtil, ApiUtilArguments } from './APIUtil';
 
@@ -10,7 +11,8 @@ export class ContainersApi extends APIUtil {
         let data;
 
         try {
-            data = await this.request(LOAD_PLAN_URL, 'POST', {data: jsonFile});
+            // Call the endpoint like this(without passing options) otherwise the returned data is incomplete.
+            data = await Axios.post(LOAD_PLAN_URL, {...jsonFile});;
         } catch (e) {
             throw e;
         }
