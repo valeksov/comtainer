@@ -12,7 +12,7 @@ export class ContainersApi extends APIUtil {
 
         try {
             // Call the endpoint like this(without passing options) otherwise the returned data is incomplete.
-            data = await Axios.post(LOAD_PLAN_URL, {...jsonFile});;
+            data = await Axios.post(LOAD_PLAN_URL, { ...jsonFile });
         } catch (e) {
             throw e;
         }
