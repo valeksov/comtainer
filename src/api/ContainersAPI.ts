@@ -10,7 +10,7 @@ export class ContainersApi extends APIUtil {
         let data;
 
         try {
-            data = await this.request(LOAD_PLAN_URL, 'POST', { jsonFile });
+            data = await this.request(LOAD_PLAN_URL, 'POST', {data: jsonFile});
         } catch (e) {
             throw e;
         }
