@@ -17,7 +17,8 @@ export class ContainersStore {
     }
 
     getLoadingPlan = async jsonFile => {
-        return await this.containersApi.fetchLoadPlan(jsonFile);
+        const response = await this.containersApi.fetchLoadPlan(jsonFile);
+        return response;
     };
 
     // Leave code block for future reference.
