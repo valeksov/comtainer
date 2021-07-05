@@ -26,15 +26,15 @@ const XlsxConverterComponent = () => {
             const fileData = event.target.result;
             const finalJSON = GenerateJSONFromXls.generateFinalJSON(XLSX.read(fileData, { type: 'binary' }));
 
-            // Export the json file.
+            // Export the parsed json file.
             // exportToJson(finalJSON);
             generalStore.showSuccessMessage(
                 'XLSX file is successfully converted! Please wait for the zipped files to start downloading!'
             );
 
-            // Call the backend service to receive the zipped file with the load plan.
-            const zipResponse = await containersStore.getLoadingPlan(finalJSON);
-            downloadZipFile(zipResponse);
+            // Get the load plan data.
+            const loadPlanResponse = await containersStore.getLoadingPlan(finalJSON);
+            downloadZipFile(loadPlanResponse?.data, loadPlanResponse?.headers['content-type'], 'load-plan');
         };
     }, [selectedFile]);
 

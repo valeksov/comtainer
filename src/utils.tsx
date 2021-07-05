@@ -1,3 +1,6 @@
+import { saveAs } from 'file-saver';
+
+// TODO vasko - add typescript later.
 export const exportToJson = (objectData, fileName = 'file') => {
     const filename = `${fileName}.json`;
     const contentType = 'application/json;charset=utf-8;';
@@ -16,13 +19,11 @@ export const exportToJson = (objectData, fileName = 'file') => {
     }
 };
 
-export const downloadZipFile = (responseBody, fileName = 'result') => {
-    const dataStr = "data:application/zip;" + responseBody;
-    const downloadElement = document.createElement('a');
+// TODO vasko - add typescript later.
+export const downloadZipFile = (data, dataType = 'application/octet-stream', filename = 'result') => {
+    if (!data) {
+        return;
+    }
 
-    downloadElement.setAttribute("href", dataStr);
-    downloadElement.setAttribute("download", fileName + ".zip");
-    document.body.appendChild(downloadElement); 
-    downloadElement.click();
-    downloadElement.remove();
-}
+    saveAs(new Blob([data], { type: dataType }), filename + '.zip');
+};
