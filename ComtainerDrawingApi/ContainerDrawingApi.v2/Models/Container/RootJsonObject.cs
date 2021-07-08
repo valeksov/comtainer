@@ -11,5 +11,14 @@ namespace ContainerDrawingApi.v2.Models
         public Container[] containers { get; set; }
 
         public int status { get; set; }
+
+        public RootJsonObject Clone()
+        {
+            return new RootJsonObject()
+            {
+                containers = this.containers,
+                status = this.status
+            };
+        }
     }
 }

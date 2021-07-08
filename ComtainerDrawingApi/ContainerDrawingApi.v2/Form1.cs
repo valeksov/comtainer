@@ -35,6 +35,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
         private DiffuseMaterial _normalMaterial = new DiffuseMaterial(System.Windows.Media.Brushes.Silver);
 
         private RootJsonObject request;
+        private string rawJsonRequest;
         private string requestNumber;
 
         private IConfiguration _configuration;
@@ -42,10 +43,11 @@ namespace Ab3d.PowerToys.WinForms.Samples
         private DrawingUtility _drawingUtility;
       
 
-        public Form1(RootJsonObject request, string requestNumber, IConfiguration configuration, ILogger logger)
+        public Form1(RootJsonObject request, string rawJsonRequest, string requestNumber, IConfiguration configuration, ILogger logger)
         {
             _logger = logger;
             this.request = request;
+            this.rawJsonRequest = rawJsonRequest;
             this.requestNumber = requestNumber;
             _configuration = configuration;
           
@@ -62,10 +64,10 @@ namespace Ab3d.PowerToys.WinForms.Samples
         private void Form1_Paint(object sender, EventArgs e)
         {
             _logger.LogInformation("Setup 3d objects");
-            Setup3DObjects(request);
+            Setup3DObjects(request, rawJsonRequest);
         }
 
-        public void Setup3DObjects(RootJsonObject request)
+        public void Setup3DObjects(RootJsonObject request, string rawJsonRequest)
         {
             try
             {
@@ -117,7 +119,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
                 _logger.LogInformation("Create zip file");
                 var containerNames = request.containers.Select(x => x.name);
                 string outputZipPath = _configuration.GetValue<string>("ZipOutput");
-                _drawingUtility.SaveResponseWithDimensions(requestNumber, request);
+                _drawingUtility.SaveResponseWithDimensions(requestNumber, rawJsonRequest);
                 _drawingUtility.ZipResultJsonAndPngs(requestNumber, containerNames, outputZipPath);
                 this.Close();   //closes the form after finish execution
             }
@@ -304,7 +306,7 @@ namespace Ab3d.PowerToys.WinForms.Samples
 
         private void animateButton_Click(object sender, EventArgs e)
         {
-            Setup3DObjects(this.request);
+            Setup3DObjects(this.request, this.rawJsonRequest);
         }
 
         private void clearButton_Click(object sender, EventArgs e)

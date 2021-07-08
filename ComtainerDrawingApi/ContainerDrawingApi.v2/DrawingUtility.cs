@@ -150,7 +150,7 @@ namespace ContainerDrawingApi
             }
         }
 
-        public void SaveResponseWithDimensions(string requestNumber, RootJsonObject request)
+        public void SaveResponseWithDimensions(string requestNumber, string response)
         {
             var subPath = $"{_configuration.GetValue<string>("ZipOutput")}\\{requestNumber}\\";
             bool exists = Directory.Exists(subPath);
@@ -159,9 +159,8 @@ namespace ContainerDrawingApi
                 Directory.CreateDirectory(subPath);
             }
 
-            string result = JsonConvert.SerializeObject(request);
             var jsonName = _configuration.GetValue<string>("ResultJsonName");
-            File.WriteAllText(subPath + jsonName, result);
+            File.WriteAllText(subPath + jsonName, response);
         }
 
         public void ZipResultJsonAndPngs(string requestNumber, IEnumerable<string> containerNames, string outputPath)

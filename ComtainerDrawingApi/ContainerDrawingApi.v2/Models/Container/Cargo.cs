@@ -10,9 +10,9 @@ namespace ContainerDrawingApi.v2.Models
     {
         public string id { get; set; }
         public string name { get; set; }
-        public int length { get; set; }
-        public int width { get; set; }
-        public int height { get; set; }
+        public double length { get; set; }
+        public double width { get; set; }
+        public double height { get; set; }
         public double weight { get; set; }
         public int quantity { get; set; }
         public int cargoStyle { get; set; }

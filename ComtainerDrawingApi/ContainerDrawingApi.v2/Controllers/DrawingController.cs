@@ -55,7 +55,7 @@ namespace ContainerDrawingApi.v2.Controllers
                 _logger.LogInformation("Starting new thread to draw boxes.");
 
                 string requestNumber = Guid.NewGuid().ToString();
-                Thread uiThread = RunForm(calculatedBoxes, requestNumber);
+                Thread uiThread = RunForm(calculatedBoxes, responseBody, requestNumber);
                 uiThread.SetApartmentState(ApartmentState.STA);
                 uiThread.Start();
                 uiThread.Join();
@@ -84,7 +84,7 @@ namespace ContainerDrawingApi.v2.Controllers
             }
         }
 
-        private Thread RunForm(RootJsonObject request, string requestNumber)
+        private Thread RunForm(RootJsonObject request, string rawRequest, string requestNumber)
         {
             return new Thread(
                 delegate ()
@@ -93,7 +93,7 @@ namespace ContainerDrawingApi.v2.Controllers
                     {
                         System.Windows.Forms.Application.EnableVisualStyles();
                         System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
-                        var form1 = new Form1(request, requestNumber, _configuration, _logger);
+                        var form1 = new Form1(request, rawRequest,  requestNumber, _configuration, _logger);
                         System.Windows.Forms.Application.Run(form1);
 
                     }
