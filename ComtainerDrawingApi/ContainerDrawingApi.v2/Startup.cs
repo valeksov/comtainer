@@ -33,11 +33,10 @@ namespace ContainerDrawingApi.v2
                 options.AddDefaultPolicy(
                     builder =>
                     {
-                        builder.WithOrigins("https://containerdrawingapi-v2.conveyor.cloud/", 
-                                            "http://localhost:36023", 
-                                            "http://localhost:3000")
-                                            .AllowAnyHeader()
-                                            .AllowAnyMethod();
+                        builder
+                        .AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
                     });
             });
         }
