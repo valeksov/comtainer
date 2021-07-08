@@ -1,3 +1,4 @@
+// TODO vasko - implement env check to use dev or prod server.
 export const LOAD_PLAN_URL = 'https://containerdrawingapi-v2.conveyor.cloud/api/drawing/post';
 export const LOAD_PLAN_URL_LOCAL = 'http://localhost:36023/api/drawing/post';
 

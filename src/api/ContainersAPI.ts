@@ -14,8 +14,7 @@ export class ContainersApi extends APIUtil {
         try {
             // TODO vasko - maybe refactor later to use APIUtil methods.
             // Call the endpoint like this(without passing options) otherwise the returned data is incomplete.
-            // data = await Axios.post(LOAD_PLAN_URL, { ...jsonFile }, { responseType: 'blob' });
-            data = await Axios.post(LOAD_PLAN_URL_LOCAL, { ...jsonFile }, { responseType: 'blob' });
+            data = await Axios.post(LOAD_PLAN_URL, { ...jsonFile }, { responseType: 'blob' });
         } catch (e) {
             throw e;
         }
