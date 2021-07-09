@@ -23,6 +23,7 @@ import com.developsoft.comtainer.rest.dto.ContainerLoadPlanDto;
 import com.developsoft.comtainer.runtime.comparators.ContainerVolumeComparator;
 import com.developsoft.comtainer.runtime.comparators.GroupTotalVolumeComparator;
 import com.developsoft.comtainer.runtime.model.CargoGroupRuntime;
+import com.developsoft.comtainer.runtime.model.CargoItemPlacementRuntime;
 import com.developsoft.comtainer.runtime.model.CargoItemRuntime;
 import com.developsoft.comtainer.runtime.model.ContainerAreaRuntime;
 import com.developsoft.comtainer.runtime.model.LoadPlanStepRuntime;
@@ -366,22 +367,73 @@ public class PackagerService {
 	private static void printStats(final ContainerDto container, final List<LoadPlanStepRuntime> placedSteps) {
 		final long containerFloorArea = ((long)container.getLength()) * ((long)container.getWidth()); 
 		final long containerVolume = containerFloorArea * ((long)container.getHeight());
+		final List<CargoItemDto> loadPlanItems = new ArrayList<CargoItemDto>();
+		final Map<String, CargoItemDto> mapItems = new HashMap<String, CargoItemDto>();
 		long usedVolume = 0;
 		long usedFloorArea = 0;
+		int usedLength = 0;
+		int usedWidth = 0;
+		int usedHeight = 0;
+		int numberPieces = 0;
+		float usedWeight = 0.0f;
+		
 		for (final LoadPlanStepRuntime step: placedSteps) {
 			usedVolume += ((long)step.getLength()) * ((long)step.getWidth()) * ((long)step.getHeight());
+			usedWeight += step.getWeight();
+			numberPieces += step.getPlacements().size();
 			if (step.getStartZ() == 0) {
 				usedFloorArea += ((long)step.getLength()) * ((long)step.getWidth());
 			}
+			if (step.getEndX() > usedLength) {
+				usedLength = step.getEndX();
+			}
+			if (step.getEndY() > usedWidth) {
+				usedWidth = step.getEndY();
+			}
+			if (step.getEndZ() > usedHeight) {
+				usedHeight = step.getEndZ();
+			}
+			for (final CargoItemPlacementRuntime nextPlacement : step.getPlacements()) {
+				CargoItemDto itemDto = mapItems.get(nextPlacement.getItem().getId());
+				if (itemDto == null) {
+					itemDto = new CargoItemDto(nextPlacement.getItem().getSource());
+					itemDto.setColor(nextPlacement.calculateColor());
+					itemDto.setGroupId(nextPlacement.getItem().getGroup().getSource().getId());
+					itemDto.setGroupName(nextPlacement.getItem().getGroup().getSource().getName());
+					mapItems.put(itemDto.getId(), itemDto);
+					loadPlanItems.add(itemDto);
+				}
+				itemDto.setQuantity(itemDto.getQuantity() + 1);
+			}
 		}
-		if (containerFloorArea > 0 && containerVolume > 0) {
-			final int volumePercent = (int) (100.0 * usedVolume / containerVolume);
-			final int floorPercent = (int) (100.0 * usedFloorArea / containerFloorArea);
-			System.out.println ("Volume used: " + usedVolume + "/" + containerVolume + " - " + volumePercent + "%");
-			System.out.println ("Floor area used: " + usedFloorArea + "/" + containerFloorArea + " - " + floorPercent + "%");
-			if (container.getLoadPlan() != null) {
-				container.getLoadPlan().setFloorAreaUsed(floorPercent);
-				container.getLoadPlan().setVolumeUsed(volumePercent);
+		if (container.getLoadPlan() != null) {
+			container.getLoadPlan().setFloorAreaUsed(usedFloorArea);
+			container.getLoadPlan().setVolumeUsed(usedVolume);
+			container.getLoadPlan().setLengthUsed(usedLength);
+			container.getLoadPlan().setWidthUsed(usedWidth);
+			container.getLoadPlan().setHeightUsed(usedHeight);
+			container.getLoadPlan().setNumberOfPieces(numberPieces);
+			container.getLoadPlan().setWeightUsed(usedWeight);
+			container.getLoadPlan().setItems(loadPlanItems);
+			if (containerFloorArea > 0 && containerVolume > 0 && container.getLength() > 0 && container.getHeight() > 0 && container.getWidth() > 0 && container.getMaxAllowedWeight() > 0) {
+				final float volumePercent = (100.0f * usedVolume) / containerVolume;
+				final float floorPercent = (100.0f * usedFloorArea) / containerFloorArea;
+				final float lengthPercent = (100.0f * usedLength) / container.getLength();
+				final float widthPercent = (100.0f * usedWidth) / container.getWidth();
+				final float heightPercent = (100.0f * usedHeight) / container.getHeight();
+				final float weightPercent = (100.0f * usedWeight) / container.getMaxAllowedWeight();
+				container.getLoadPlan().setFloorAreaFree(containerFloorArea - usedFloorArea);
+				container.getLoadPlan().setFloorAreaUsedInPercent(floorPercent);
+				container.getLoadPlan().setVolumeFree(containerVolume - usedVolume);
+				container.getLoadPlan().setVolumeUsedInPercent(volumePercent);
+				container.getLoadPlan().setLengthFree(container.getLength() - usedLength);
+				container.getLoadPlan().setLengthUsedInPercent(lengthPercent);
+				container.getLoadPlan().setWidthFree(container.getWidth() - usedWidth);
+				container.getLoadPlan().setWidthUsedInPercent(widthPercent);
+				container.getLoadPlan().setHeightFree(container.getHeight() - usedHeight);
+				container.getLoadPlan().setHeightUsedInPercent(heightPercent);
+				container.getLoadPlan().setWeightFree(container.getMaxAllowedWeight() - usedWeight);
+				container.getLoadPlan().setWeightUsedInPercent(weightPercent);
 			}
 		}
 		

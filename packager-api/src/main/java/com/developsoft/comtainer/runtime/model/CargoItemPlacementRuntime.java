@@ -115,11 +115,14 @@ public class CargoItemPlacementRuntime {
 		result.setStartX(parentStep.getStartX() + getStartX());
 		result.setStartY(parentStep.getStartY() + getStartY());
 		result.setStartZ(parentStep.getStartZ() + getStartZ());
-		//TBD Color
-		final String color = getItem().getSource().getColor() != null && getItem().getSource().getColor().length() > 0 ? getItem().getSource().getColor() :
-							getItem().getGroup() != null && getItem().getGroup().getSource().getColor() != null && getItem().getGroup().getSource().getColor().length() > 0
-										? getItem().getGroup().getSource().getColor() : RuntimeUtil.randomColor();
+		final String color = calculateColor();
 		result.setColor(color);
 		return result;
+	}
+	public String calculateColor() {
+		final String color = getItem().getSource().getColor() != null && getItem().getSource().getColor().length() > 0 ? getItem().getSource().getColor() :
+			getItem().getGroup() != null && getItem().getGroup().getSource().getColor() != null && getItem().getGroup().getSource().getColor().length() > 0
+						? getItem().getGroup().getSource().getColor() : RuntimeUtil.randomColor();
+		return color;
 	}
 }

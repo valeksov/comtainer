@@ -18,5 +18,31 @@ public class CargoItemDto {
 	private boolean selfStackable; 
 	private String color;
 	private Integer maxLayer;
+	
+	private String groupId;
+	private String groupName;
+	
+	public CargoItemDto() {
+		super();
+	}
+	public CargoItemDto(final CargoItemDto source) {
+		this();
+		setData(source);
+	}
+	
+	private void setData(final CargoItemDto source) {
+		setId(source.getId());
+		setName(source.getName());
+		setLength(source.getLength());
+		setWidth(source.getWidth());
+		setHeight(source.getHeight());
+		setWeight(source.getWeight());
+		setQuantity(0);
+		setCargoStyle(source.getCargoStyle());
+		setRotatable(source.isRotatable());
+		setStackable(source.isStackable());
+		setSelfStackable(source.isSelfStackable());
+		setMaxLayer(source.getMaxLayer());
+	}
 
 }
