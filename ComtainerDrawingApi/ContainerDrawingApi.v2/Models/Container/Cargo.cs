@@ -19,5 +19,7 @@ namespace ContainerDrawingApi.v2.Models
         public bool rotatable { get; set; }
         public bool stackable { get; set; }
         public bool selfStackable { get; set; }
+        public string groupId { get; set; }
+        public string groupName { get; set; }
     }
 }
