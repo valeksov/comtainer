@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using ContainerDrawingApi.v2.Models;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 
 namespace ContainerDrawingApi
 {
@@ -160,7 +161,8 @@ namespace ContainerDrawingApi
             }
 
             var jsonName = _configuration.GetValue<string>("ResultJsonName");
-            File.WriteAllText(subPath + jsonName, response);
+            string prettyJson = JToken.Parse(response).ToString(Formatting.Indented);
+            File.WriteAllText(subPath + jsonName, prettyJson);
         }
 
         public void ZipResultJsonAndPngs(string requestNumber, IEnumerable<string> containerNames, string outputPath)
