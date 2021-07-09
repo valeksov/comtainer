@@ -50,7 +50,9 @@ namespace ContainerDrawingApi.v2.Controllers
                 _logger.LogInformation("Received response with calculated dimensions.");
                 calculatedBoxesResponse.EnsureSuccessStatusCode();
                 string responseBody = await calculatedBoxesResponse.Content.ReadAsStringAsync();
-                calculatedBoxes = JsonConvert.DeserializeObject<RootJsonObject>(responseBody);
+                calculatedBoxes = JsonConvert.DeserializeObject<RootJsonObject>(responseBody, new JsonSerializerSettings() { 
+                    Formatting = Formatting.Indented
+                });
                 
                 _logger.LogInformation("Starting new thread to draw boxes.");
 
