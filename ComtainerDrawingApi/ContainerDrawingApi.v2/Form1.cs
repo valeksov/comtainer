@@ -119,8 +119,8 @@ namespace Ab3d.PowerToys.WinForms.Samples
                 _logger.LogInformation("Create zip file");
                 var containerNames = request.containers.Select(x => x.name);
                 string outputZipPath = _configuration.GetValue<string>("ZipOutput");
-                _drawingUtility.SaveResponseWithDimensions(requestNumber, rawJsonRequest);
-                _drawingUtility.ZipResultJsonAndPngs(requestNumber, containerNames, outputZipPath);
+                _drawingUtility.SaveResponse(requestNumber, rawJsonRequest);
+                _drawingUtility.ZipPngsAndResponse(requestNumber, containerNames, outputZipPath);
                 this.Close();   //closes the form after finish execution
             }
             catch(Exception e)

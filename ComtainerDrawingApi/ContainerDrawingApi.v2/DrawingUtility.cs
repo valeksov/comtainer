@@ -148,10 +148,11 @@ namespace ContainerDrawingApi
                 BitmapEncoder encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(bitmap));
                 encoder.Save(fileStream);
+                fileStream.Flush();
             }
         }
 
-        public void SaveResponseWithDimensions(string requestNumber, string response)
+        public void SaveResponse(string requestNumber, string response)
         {
             var subPath = $"{_configuration.GetValue<string>("ZipOutput")}\\{requestNumber}\\";
             bool exists = Directory.Exists(subPath);
@@ -165,7 +166,7 @@ namespace ContainerDrawingApi
             File.WriteAllText(subPath + jsonName, prettyJson);
         }
 
-        public void ZipResultJsonAndPngs(string requestNumber, IEnumerable<string> containerNames, string outputPath)
+        public void ZipPngsAndResponse(string requestNumber, IEnumerable<string> containerNames, string outputPath)
         {
             string zipOutput = _configuration.GetValue<string>("ZipOutput");
 
