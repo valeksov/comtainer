@@ -6,12 +6,14 @@ import { HomeComponent } from './modules/home/home/home.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from './modules/shared/material';
 import { ContainersTableComponent } from './modules/home/containers-table/containers-table.component';
+import { GenerateJsonComponent } from './modules/home/home/generate-json/generate-json.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     HomeComponent,
-    ContainersTableComponent
+    ContainersTableComponent,
+    GenerateJsonComponent
   ],
   imports: [
     MaterialModule,

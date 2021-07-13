@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import * as XLSX from 'xlsx';
+// import { ConvertedXlsDto } from '../generate-json/generate-json.types';
 
 @Component({
   selector: 'app-home',
@@ -7,7 +8,8 @@ import * as XLSX from 'xlsx';
   styleUrls: ['./home.component.css'],
 })
 export class HomeComponent implements OnInit {
-  convertedJson = '';
+  convertedJson = {};
+  // convertedJson: ConvertedXlsDto = INITIAL_JSON;
 
   constructor() {}
 
@@ -22,8 +24,16 @@ export class HomeComponent implements OnInit {
       let workSheet = XLSX.read(binaryData, { type: 'binary' });
       workSheet.SheetNames.forEach((sheet) => {
         const data = XLSX.utils.sheet_to_json(workSheet.Sheets[sheet]);
-        this.convertedJson = JSON.stringify(data); 
+        console.log(data);
+        // this.convertedJson = JSON.stringify(data); 
+        // this.convertedJson = data[0]; 
       });
     };
   }
 }
+
+// const INITIAL_JSON: ConvertedXlsDto = {
+//   containers: [],
+//   config: null,
+//   groups: [],
+// };
