@@ -1,25 +1,18 @@
 <mat-card>
-  <form>
-    <input
-      type="file"
-      name="fileUpload"
-      accept=".xls, .xlsx"
-      (change)="onUploadFile($event)"
-    />
-  </form>
+  <app-header></app-header>
+
+  <mat-tab-group>
+    <mat-tab label="Configuration"> Configuration </mat-tab>
+
+    <mat-tab label="Containers">
+      <app-containers-table></app-containers-table>
+    </mat-tab>
+
+    <mat-tab label="Cargoes"> Cargoes </mat-tab>
+
+    <mat-tab label="Results">
+      <app-results-tab></app-results-tab>
+    </mat-tab>
+
+  </mat-tab-group>
 </mat-card>
-
-<mat-card>
-
-  {{ convertedJson }}
-
-  <!-- <app-generate-json [convertedJSON]="convertedJson"></app-generate-json> -->
-</mat-card>
-
-<mat-tab-group>
-  <mat-tab label="SEA CONTAINERS">
-    <app-containers-table></app-containers-table>
-  </mat-tab>
-  <mat-tab label="CARGOES"> Content 2 </mat-tab>
-  <mat-tab label="RESULTS"> Content 3 </mat-tab>
-</mat-tab-group>

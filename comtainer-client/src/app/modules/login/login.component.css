@@ -1,0 +1,20 @@
+.container {
+    box-sizing: border-box;
+}
+
+.login-wrapper{
+    text-align: center;
+    margin-top: 15%;
+}
+
+mat-form-field, button {
+    width: 300px;
+}
+
+.heading {
+    text-align: center;
+}
+
+button {
+    padding: .5%;
+}

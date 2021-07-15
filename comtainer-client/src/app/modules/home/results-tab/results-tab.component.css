@@ -1,0 +1,24 @@
+.result-container {
+  display: flex;
+}
+
+.comtainer-wrapper {
+  display: flex;
+  justify-content: space-between;
+  height: 100vh;
+}
+
+.ripple-container {
+  cursor: pointer;
+  text-align: center;
+  width: 200px;
+  height: 200px;
+  line-height: 200px;
+  background-color: antiquewhite;
+  margin: 0 2px;
+}
+
+.comtainer-info {
+  margin-left: 50px;
+    width: 50%;
+}

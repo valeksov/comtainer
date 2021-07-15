@@ -1,0 +1,50 @@
+<table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+  <!-- 'name', 'secondName', 'max', 'used', 'notUsed', 'usedInPerc', 'notUsedInPerc' -->
+
+  <!-- name -->
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef>name </th>
+    <td mat-cell *matCellDef="let element">Length</td>
+  </ng-container>
+
+  <!-- secondName -->
+  <ng-container matColumnDef="secondName">
+    <th mat-header-cell *matHeaderCellDef>secondName</th>
+    <td mat-cell *matCellDef="let element">
+      {{ element.secondName }}
+    </td>
+  </ng-container>
+
+  <!-- max -->
+  <ng-container matColumnDef="max">
+    <th mat-header-cell *matHeaderCellDef>Мax</th>
+    <td mat-cell *matCellDef="let element">{{ element.max }}</td>
+  </ng-container>
+
+  <!-- used -->
+  <ng-container matColumnDef="used">
+    <th mat-header-cell *matHeaderCellDef>Used</th>
+    <td mat-cell *matCellDef="let element">{{ element.used }}</td>
+  </ng-container>
+
+  <!-- notUsed -->
+  <ng-container matColumnDef="notUsed">
+    <th mat-header-cell *matHeaderCellDef>Not Used</th>
+    <td mat-cell *matCellDef="let element">{{ element.notUsed }}</td>
+  </ng-container>
+
+  <!-- usedInPerc -->
+  <ng-container matColumnDef="usedInPerc">
+    <th mat-header-cell *matHeaderCellDef>Used %</th>
+    <td mat-cell *matCellDef="let element">{{ element.usedInPerc }}</td>
+  </ng-container>
+
+  <!-- notUsedInPerc -->
+  <ng-container matColumnDef="notUsedInPerc">
+    <th mat-header-cell *matHeaderCellDef>Not Used %</th>
+    <td mat-cell *matCellDef="let element">{{ element.notUsedInPerc }}</td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+</table>

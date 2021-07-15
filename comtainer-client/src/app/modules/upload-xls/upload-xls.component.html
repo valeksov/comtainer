@@ -1,0 +1,27 @@
+<button class="close-btn" mat-button mat-dialog-close>
+  <mat-icon>close</mat-icon>
+</button>
+
+<h2 mat-dialog-title>Upload file (.xls, .xlsx)</h2>
+<!-- <mat-dialog-content> -->
+  <mat-card class="mat-elevation-z4">
+    <input
+      type="file"
+      name="fileUpload"
+      accept=".xls, .xlsx"
+      color="primary"
+      (change)="onUploadFile($event)"
+    />
+
+    <button mat-raised-button color="primary" (click)="handleFileConversion()">
+      Convert
+    </button>
+  </mat-card>
+<!-- </mat-dialog-content> -->
+
+<!-- <div className={styles.container}>
+  <Input type="file" color="primary" onChange={handleFileUpload} />
+  <Button variant="contained" color="primary" onClick={handleFileConversion}>
+      Convert
+  </Button>
+</div> -->
