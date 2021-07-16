@@ -1,11 +1,40 @@
-.container {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    height: 80px;
+.dialog-container {
+  width: 600px;
+  height: 300px;
 }
 
 .close-btn {
-    float: right;
+  float: right;
+}
+
+.title {
+  font-style: italic;
+  font-weight: bold;
+}
+
+.xls-container {
+  height: 80%;
+}
+
+.calculate {
+  float: right;
+  width: 120px;
+  height: 45px;
+  border: 1px solid #ccc;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.custom-file-upload {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  display: inline-block;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.action {
+    margin-top: 5%;
 }

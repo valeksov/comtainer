@@ -16,6 +16,9 @@ import { DetailsLoadListComponent } from './modules/home/results-tab/details-loa
 import { DetailsSummaryComponent } from './modules/home/results-tab/details-summary/details-summary.component';
 import { UploadXlsComponent } from './modules/upload-xls/upload-xls.component';
 
+import {StoreModule } from '@ngrx/store';
+import { loadPlanReducer } from './store/loadPlan.reducer';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -34,7 +37,10 @@ import { UploadXlsComponent } from './modules/upload-xls/upload-xls.component';
     BrowserAnimationsModule,
     HttpClientModule,
     AppRoutingModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    StoreModule.forRoot({
+      loadPlan: loadPlanReducer
+    })
   ],
   providers: [],
   bootstrap: [AppComponent],

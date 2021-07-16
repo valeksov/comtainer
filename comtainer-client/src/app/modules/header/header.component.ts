@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { UploadXlsComponent } from '../upload-xls/upload-xls.component';
@@ -6,23 +6,15 @@ import { UploadXlsComponent } from '../upload-xls/upload-xls.component';
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.css']
+  styleUrls: ['./header.component.css'],
 })
 export class HeaderComponent implements OnInit {
+  constructor(public dialog: MatDialog, private router: Router) {}
 
-  constructor(
-    public dialog: MatDialog,
-    private router: Router) { }
-
-  ngOnInit() {
-  }
+  ngOnInit() {}
 
   openDialog() {
-    const dialogRef = this.dialog.open(UploadXlsComponent);
-
-    dialogRef.afterClosed().subscribe(result => {
-      console.log(`Dialog result: ${result}`);
-    });
+    this.dialog.open(UploadXlsComponent);
   }
 
   onExitClick() {

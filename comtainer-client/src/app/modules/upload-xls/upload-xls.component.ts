@@ -1,9 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, Optional } from '@angular/core';
 import { MenageDrawnImagesService } from '../core/services/menage-drawn-images.service';
 import { GenerateJsonService } from '../home/home/generate-json/generate-json.service';
 import { ConvertedXlsDto } from '../home/home/generate-json/generate-json.types';
 import * as XLSX from 'xlsx';
-
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { Store } from '@ngrx/store';
+import { AppState } from 'src/app/store/app.state';
+import * as LoadActions from '../../store/loadPlan.actions';
+import { ILoadPlan } from 'src/app/store/loadPlan';
 @Component({
   selector: 'app-upload-xls',
   templateUrl: './upload-xls.component.html',
@@ -13,20 +17,26 @@ export class UploadXlsComponent implements OnInit {
   convertedJson = {};
   dataForGeneratingImages!: ConvertedXlsDto;
   selectedFile: File;
+  selectedFileName: string = '';
 
   constructor(
     private generateJsonService: GenerateJsonService,
-    private httpLoadPlanService: MenageDrawnImagesService
-  ) {}
+    private httpLoadPlanService: MenageDrawnImagesService,
+    private store: Store<AppState>,
+    private dialogRef: MatDialogRef<UploadXlsComponent>,
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: any
+  ) {
+    this.store.select('loadPlan');
+  }
 
   ngOnInit() {}
 
   onUploadFile(e: any) {
     this.selectedFile = e.target.files[0];
+    this.selectedFileName = this.selectedFile.name;
   }
 
   handleFileConversion() {
-
     if (this.selectedFile === undefined) {
       return;
     }
@@ -43,11 +53,12 @@ export class UploadXlsComponent implements OnInit {
           XLSX.read(binaryData, { type: 'binary' })
         );
       this.dataForGeneratingImages = jsonObject;
-      const data = this.httpLoadPlanService.getLoadPlan(
+
+      const data: any = this.httpLoadPlanService.getLoadPlan(
         this.dataForGeneratingImages
       );
-
-      console.log('return data', data);
+      this.store.dispatch(new LoadActions.AddLoadPlan(data));
+      this.dialogRef.close();
     };
   }
 }

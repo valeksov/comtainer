@@ -1,18 +1,10 @@
 <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-  <!-- 'name', 'secondName', 'max', 'used', 'notUsed', 'usedInPerc', 'notUsedInPerc' -->
+  <!-- 'name', 'max', 'used', 'free', 'usedInPercent', 'freeInPercent'-->
 
   <!-- name -->
   <ng-container matColumnDef="name">
-    <th mat-header-cell *matHeaderCellDef>name </th>
-    <td mat-cell *matCellDef="let element">Length</td>
-  </ng-container>
-
-  <!-- secondName -->
-  <ng-container matColumnDef="secondName">
-    <th mat-header-cell *matHeaderCellDef>secondName</th>
-    <td mat-cell *matCellDef="let element">
-      {{ element.secondName }}
-    </td>
+    <th mat-header-cell *matHeaderCellDef>{{ containerName }}</th>
+    <td mat-cell *matCellDef="let element">{{ element.name }}</td>
   </ng-container>
 
   <!-- max -->
@@ -27,22 +19,22 @@
     <td mat-cell *matCellDef="let element">{{ element.used }}</td>
   </ng-container>
 
-  <!-- notUsed -->
-  <ng-container matColumnDef="notUsed">
+  <!-- free -->
+  <ng-container matColumnDef="free">
     <th mat-header-cell *matHeaderCellDef>Not Used</th>
-    <td mat-cell *matCellDef="let element">{{ element.notUsed }}</td>
+    <td mat-cell *matCellDef="let element">{{ element.free }}</td>
   </ng-container>
 
-  <!-- usedInPerc -->
-  <ng-container matColumnDef="usedInPerc">
+  <!-- usedInPercent -->
+  <ng-container matColumnDef="usedInPercent">
     <th mat-header-cell *matHeaderCellDef>Used %</th>
-    <td mat-cell *matCellDef="let element">{{ element.usedInPerc }}</td>
+    <td mat-cell *matCellDef="let element">{{ element.usedInPercent }}</td>
   </ng-container>
 
-  <!-- notUsedInPerc -->
-  <ng-container matColumnDef="notUsedInPerc">
+  <!-- freeInPercent -->
+  <ng-container matColumnDef="freeInPercent">
     <th mat-header-cell *matHeaderCellDef>Not Used %</th>
-    <td mat-cell *matCellDef="let element">{{ element.notUsedInPerc }}</td>
+    <td mat-cell *matCellDef="let element">{{ element.freeInPercent }}</td>
   </ng-container>
 
   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

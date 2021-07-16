@@ -12,6 +12,7 @@ import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {MatRippleModule} from '@angular/material/core';
 import {MatDialogModule} from '@angular/material/dialog';
+import {MatChipsModule} from '@angular/material/chips';
 
 
 @NgModule({
@@ -28,7 +29,8 @@ import {MatDialogModule} from '@angular/material/dialog';
     MatTooltipModule,
     MatGridListModule,
     MatRippleModule,
-    MatDialogModule
+    MatDialogModule,
+    MatChipsModule
   ],
 
   exports: [
@@ -44,7 +46,8 @@ import {MatDialogModule} from '@angular/material/dialog';
     MatTooltipModule,
     MatGridListModule,
     MatRippleModule,
-    MatDialogModule
+    MatDialogModule,
+    MatChipsModule
   ],
 
   providers: [],

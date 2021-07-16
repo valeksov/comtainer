@@ -23,8 +23,8 @@
       </button>
       <!-- Rear View  -->
       <button mat-button matTooltip="Rear View ">
-      <mat-icon> south_east </mat-icon>
-    </button>
+        <mat-icon> south_east </mat-icon>
+      </button>
     </div>
 
     <div class="comtainer-wrapper">
@@ -34,37 +34,19 @@
         [matRippleCentered]="centered"
         [matRippleDisabled]="disabled"
         [matRippleUnbounded]="unbounded"
+        *ngFor="let container of containers; index as i"
+        (click)="onClickToRipple(container)"
       >
-        Container 1
-      </div>
-      <div
-        class="ripple-container mat-elevation-z1"
-        matRipple
-        [matRippleCentered]="centered"
-        [matRippleDisabled]="disabled"
-        [matRippleUnbounded]="unbounded"
-      >
-        Container 2
-      </div>
-
-      <div
-        class="ripple-container mat-elevation-z1"
-        matRipple
-        [matRippleCentered]="centered"
-        [matRippleDisabled]="disabled"
-        [matRippleUnbounded]="unbounded"
-        (click)="onClickToRipple()"
-      >
-        Not Loaded
+        {{ container.id }}
       </div>
     </div>
   </div>
 
   <div class="comtainer-info">
-    <span> See the detail for Container 1</span>
+    <span> See the details: {{ this.selectedContainerName }}</span>
     <mat-tab-group>
       <mat-tab label="Summary">
-        <app-details-summary></app-details-summary>
+        <app-details-summary [summaryData]="summaryData"></app-details-summary>
       </mat-tab>
 
       <mat-tab label="Load list">

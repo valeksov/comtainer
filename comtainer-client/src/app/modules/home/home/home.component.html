@@ -1,7 +1,7 @@
 <mat-card>
   <app-header></app-header>
 
-  <mat-tab-group>
+  <mat-tab-group [selectedIndex]="4">
     <mat-tab label="Configuration"> Configuration </mat-tab>
 
     <mat-tab label="Containers">
@@ -10,7 +10,7 @@
 
     <mat-tab label="Cargoes"> Cargoes </mat-tab>
 
-    <mat-tab label="Results">
+    <mat-tab label="Results" active>
       <app-results-tab></app-results-tab>
     </mat-tab>
 
