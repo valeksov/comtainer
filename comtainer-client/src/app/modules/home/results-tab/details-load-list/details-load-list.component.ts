@@ -1,67 +1,59 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-details-load-list',
   templateUrl: './details-load-list.component.html',
   styleUrls: ['./details-load-list.component.css'],
 })
-export class DetailsLoadListComponent implements OnInit {
-  displayedColumns: string[] = ['number', 'color', 'group', 'groupAlias', 'cargo', 'qty', 'pieces', 'volume', 'weight'];
-  dataSource = ELEMENT_DATA;
+export class DetailsLoadListComponent implements OnInit, OnChanges {
+  @Input() loadListData: any;
+
+  displayedColumns: string[] = [
+    'number',
+    'color',
+    'groupName',
+    'groupAlias',
+    'cargo',
+    'quantity',
+    'pieces',
+    'volume',
+    'weight',
+  ];
+
+  dataSource: LoadListItem[];
 
   constructor() {}
 
   ngOnInit() {}
-}
 
-export interface Container {
-  number: string;
-  color: string;
-  group: string;
-  groupAlias: string;
-  cargo: string;
-  qty: string;
-  pieces: string;
-  volume: string;
-  weight: string;
-}
-
-const ELEMENT_DATA: Container[] = [
-  {
-    number: '1',
-    color: '4b31a7',
-    group: '101291',
-    groupAlias: 'C1',
-    cargo: '5272',
-    qty: '8',
-    pieces: '4',
-    volume: '11.55',
-    weight: '923.76'
-  },
-  {
-    number: '2',
-    color: 'C4D210',
-    group: '101294',
-    groupAlias: 'B1',
-    cargo: '5274',
-    qty: '3',
-    pieces: '7',
-    volume: '112.55',
-    weight: '342.76'
-  },
-  {
-    number: '3',
-    color: 'b69a9a',
-    group: '101222',
-    groupAlias: 'D1',
-    cargo: '5273',
-    qty: '18',
-    pieces: '2',
-    volume: '41.55',
-    weight: '1223.76'
+  ngOnChanges() {
+    this.dataSource = this.loadListData?.loadPlan?.items;
+    console.log('Load List:', this.dataSource);
   }
-];
 
+  calculateVolume(element: LoadListItem) {
+    const volume = element.width * element.height * element.length * element.quantity;
+    return volume / 1000;
+  }
+}
+
+export interface LoadListItem {
+  cargoStyle: number;
+  color: string;
+  groupName: string;
+  groupAlias: string;
+  height: number;
+  id: string;
+  length:number;
+  maxLayer: number;
+  name: string;
+  quantity: number;
+  rotatable: boolean;
+  selfStackable: true
+  stackable: boolean;
+  weight:number;
+  width: number;
+}
 
 // •	Used Volume: in cubic mm (Sum of all cargo pieces volumes from the steps)
 // •	Used Floor Area: in square mm (Sum of all cargo pieces areas: length*width after rotation if any from the steps with StartZ/height coordinate=0)
@@ -72,7 +64,25 @@ const ELEMENT_DATA: Container[] = [
 // •	Used Length in percent from the Container Length
 // •	Used Width in mm - Max EndY coordinate (StartY+width) after rotation if any from the cargo piece placed in the container
 // •	Free Width in mm - Container Width - Used Width
-// •	Used Width in percent from the Container Width	
+// •	Used Width in percent from the Container Width
 // •	Used Height in mm - Max EndZ coordinate (StartZ+height) after rotation if any from the cargo piece placed in the container
 // •	Free Height in mm - Container Height - Used Height
 // •	Used Height in percent from the Container Height
+
+// {
+//   "id": "24",
+//   "name": "100995",
+//   "length": 1270,
+//   "width": 3050,
+//   "height": 320,
+//   "weight": 1105,
+//   "quantity": 2,
+//   "cargoStyle": 1,
+//   "rotatable": false,
+//   "stackable": true,
+//   "selfStackable": false,
+//   "color": "f6dc7a",
+//   "maxLayer": 0,
+//   "groupId": "13",
+//   "groupName": "100995"
+// }

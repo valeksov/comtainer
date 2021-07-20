@@ -1,5 +1,9 @@
 <div class="dialog-container">
-  <button class="close-btn" mat-button mat-dialog-close>
+  <div class="spinner-container" *ngIf="loading">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <button class="close-btn" mat-button mat-dialog-close [disabled]="loading">
     <mat-icon>close</mat-icon>
   </button>
 
@@ -17,6 +21,7 @@
         accept=".xls, .xlsx"
         color="primary"
         (change)="onUploadFile($event)"
+        [disabled]="loading"
       />
 
       <button
@@ -24,6 +29,7 @@
         matTooltip="Calculate"
         (click)="handleFileConversion()"
         class="calculate"
+        [disabled]="loading"
       >
         <mat-icon>calculate</mat-icon>
       </button>

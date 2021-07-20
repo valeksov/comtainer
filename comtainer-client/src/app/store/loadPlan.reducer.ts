@@ -16,11 +16,14 @@ export function loadPlanReducer<initialState>(
   action: LoadActions.loadPlanActions
 ) {
   console.log(action.type, state);
-
+  
   switch (action.type) {
     case LoadActions.ADD_LOAD_PLAN:
-          return  newState(state, action.payload);
+      return newState(state, action.payload);
+    case LoadActions.CLEAR_STATE:
+      return newState(state, initialState);
     default:
       return state;
   }
+ 
 }

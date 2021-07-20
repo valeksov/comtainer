@@ -1,5 +1,4 @@
 import { Component, Input, OnChanges, OnInit } from '@angular/core';
-import { ISummary } from '../results-tab.component';
 
 @Component({
   selector: 'app-details-summary',
@@ -20,9 +19,8 @@ export class DetailsSummaryComponent implements OnInit, OnChanges {
   ngOnInit() {}
 
   ngOnChanges(){
-    this.summaryTabData = this.summaryData.data;
+    this.summaryTabData = this.summaryData?.data;
     this.dataSource = this.summaryTabData;
-    this.containerName = this.summaryData.containerName;
-    console.log('dataSource', this.dataSource);
+    this.containerName = this.summaryData?.containerName;
   }
 }

@@ -16,11 +16,15 @@ import { DetailsLoadListComponent } from './modules/home/results-tab/details-loa
 import { DetailsSummaryComponent } from './modules/home/results-tab/details-summary/details-summary.component';
 import { UploadXlsComponent } from './modules/upload-xls/upload-xls.component';
 
-import {StoreModule } from '@ngrx/store';
+import { StoreModule } from '@ngrx/store';
 import { loadPlanReducer } from './store/loadPlan.reducer';
+import { LoadBlocksComponent } from './modules/home/results-tab/load-blocks/load-blocks.component';
+import { SafePipe } from './modules/shared/safe.pipe';
+import { ToastrModule } from 'ngx-toastr';
 
 @NgModule({
   declarations: [
+    SafePipe,
     AppComponent,
     HomeComponent,
     ContainersTableComponent,
@@ -29,7 +33,8 @@ import { loadPlanReducer } from './store/loadPlan.reducer';
     ResultsTabComponent,
     DetailsLoadListComponent,
     DetailsSummaryComponent,
-    UploadXlsComponent
+    UploadXlsComponent,
+    LoadBlocksComponent,
   ],
   imports: [
     MaterialModule,
@@ -39,11 +44,16 @@ import { loadPlanReducer } from './store/loadPlan.reducer';
     AppRoutingModule,
     ReactiveFormsModule,
     StoreModule.forRoot({
-      loadPlan: loadPlanReducer
-    })
+      loadPlan: loadPlanReducer,
+    }),
+    ToastrModule.forRoot({
+      timeOut: 3000,
+      positionClass: 'toast-top-center',
+      preventDuplicates: true
+    }),
   ],
   providers: [],
   bootstrap: [AppComponent],
-  entryComponents: [UploadXlsComponent]
+  entryComponents: [UploadXlsComponent],
 })
 export class AppModule {}

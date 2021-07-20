@@ -1,11 +1,11 @@
 <div class="header-container">
   <div class="action-btns">
-    <button mat-button matTooltip="Home">
+    <button mat-button matTooltip="Home" (click)="clearCurrentState()">
       <mat-icon>home</mat-icon>
     </button>
 
-    <button mat-button matTooltip="Upload file" (click)="openDialog()">
-      <mat-icon>upload_file</mat-icon>
+    <button mat-button  matTooltip="Upload file" (click)="openDialog()" class="upload-btn">
+      <mat-icon>upload_file</mat-icon>Upload file
     </button>
   </div>
   <div class="profile">

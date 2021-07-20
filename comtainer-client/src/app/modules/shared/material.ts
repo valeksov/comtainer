@@ -13,6 +13,8 @@ import {MatGridListModule} from '@angular/material/grid-list';
 import {MatRippleModule} from '@angular/material/core';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatChipsModule} from '@angular/material/chips';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
 
 @NgModule({
@@ -30,7 +32,9 @@ import {MatChipsModule} from '@angular/material/chips';
     MatGridListModule,
     MatRippleModule,
     MatDialogModule,
-    MatChipsModule
+    MatChipsModule,
+    MatProgressSpinnerModule,
+    MatButtonToggleModule
   ],
 
   exports: [
@@ -47,7 +51,9 @@ import {MatChipsModule} from '@angular/material/chips';
     MatGridListModule,
     MatRippleModule,
     MatDialogModule,
-    MatChipsModule
+    MatChipsModule,
+    MatProgressSpinnerModule,
+    MatButtonToggleModule
   ],
 
   providers: [],

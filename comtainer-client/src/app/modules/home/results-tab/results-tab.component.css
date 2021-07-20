@@ -4,8 +4,8 @@
 
 .comtainer-wrapper {
   display: flex;
-  justify-content: space-between;
-  height: 100vh;
+  flex-wrap: wrap;
+  /* height: 100vh; */
 }
 
 .ripple-container {
@@ -13,12 +13,26 @@
   text-align: center;
   width: 200px;
   height: 200px;
-  line-height: 200px;
-  background-color: antiquewhite;
   margin: 0 2px;
+  position: relative;
 }
 
 .comtainer-info {
   margin-left: 50px;
-    width: 50%;
+    width: 65%;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.title {
+  z-index: 999;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }

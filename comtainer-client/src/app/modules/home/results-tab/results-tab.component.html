@@ -1,35 +1,78 @@
-<div class="result-container">
+<div class="result-container" *ngIf="containers.length > 0">
   <div>
     <div class="view-icons">
-      <!-- Top View -->
-      <button mat-button>
-        <mat-icon matTooltip="Top View"> arrow_downward </mat-icon>
-      </button>
-      <!-- Bottom View -->
-      <button mat-button matTooltip="Bottom View">
-        <mat-icon> arrow_upward </mat-icon>
-      </button>
-      <!-- Right View -->
-      <button mat-button matTooltip="Right View">
-        <mat-icon> west </mat-icon>
-      </button>
-      <!-- Left View -->
-      <button mat-button matTooltip="Left View">
-        <mat-icon> east </mat-icon>
-      </button>
-      <!-- Front View -->
-      <button mat-button matTooltip="Front View">
-        <mat-icon> fullscreen </mat-icon>
-      </button>
-      <!-- Rear View  -->
-      <button mat-button matTooltip="Rear View ">
-        <mat-icon> south_east </mat-icon>
-      </button>
-    </div>
+      <mat-button-toggle-group>
+        <!-- 3D_View, Bottom, Front, Left, Rear, Right, Top -->
 
+        <!-- 3D View -->
+        <mat-button-toggle
+          mat-button
+          (click)="changeContainerView('3D_View')"
+          matTooltip="3D View"
+          checked
+        >
+          <mat-icon>3d_rotation</mat-icon>
+        </mat-button-toggle>
+
+        <!-- Top View -->
+        <mat-button-toggle
+          mat-button
+          (click)="changeContainerView('Top')"
+          matTooltip="Top View"
+        >
+          <mat-icon> arrow_downward </mat-icon>
+        </mat-button-toggle>
+
+        <!-- Bottom View -->
+        <mat-button-toggle
+          mat-button
+          matTooltip="Bottom View"
+          (click)="changeContainerView('Bottom')"
+        >
+          <mat-icon> arrow_upward </mat-icon>
+        </mat-button-toggle>
+
+        <!-- Right View -->
+        <mat-button-toggle
+          mat-button
+          matTooltip="Right View"
+          (click)="changeContainerView('Right')"
+        >
+          <mat-icon> west </mat-icon>
+        </mat-button-toggle>
+
+        <!-- Left View -->
+        <mat-button-toggle
+          mat-button
+          matTooltip="Left View"
+          (click)="changeContainerView('Left')"
+        >
+          <mat-icon> east </mat-icon>
+        </mat-button-toggle>
+
+        <!-- Front View -->
+        <mat-button-toggle
+          mat-button
+          matTooltip="Front View"
+          (click)="changeContainerView('Front')"
+        >
+          <mat-icon> fullscreen </mat-icon>
+        </mat-button-toggle>
+
+        <!-- Rear View  -->
+        <mat-button-toggle
+          mat-button
+          matTooltip="Rear View "
+          (click)="changeContainerView('Rear')"
+        >
+          <mat-icon> south_east </mat-icon>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+    <br />
     <div class="comtainer-wrapper">
       <div
-        class="ripple-container mat-elevation-z1"
+        class="ripple-container mat-elevation-z2"
         matRipple
         [matRippleCentered]="centered"
         [matRippleDisabled]="disabled"
@@ -37,23 +80,33 @@
         *ngFor="let container of containers; index as i"
         (click)="onClickToRipple(container)"
       >
-        {{ container.id }}
+        <p class="title">{{ container.id }}</p>
+        <img
+          [src]="container.loadPlan.images[selectView] | safe: 'url'"
+          class="image"
+        />
       </div>
     </div>
+    <br />
   </div>
 
-  <div class="comtainer-info">
-    <span> See the details: {{ this.selectedContainerName }}</span>
+  <div class="comtainer-info" *ngIf="selectedContainer">
+    <span>
+      View details for: <b> {{ this.selectedContainerName }} </b></span
+    >
     <mat-tab-group>
       <mat-tab label="Summary">
         <app-details-summary [summaryData]="summaryData"></app-details-summary>
       </mat-tab>
 
       <mat-tab label="Load list">
-        <app-details-load-list></app-details-load-list>
+        <app-details-load-list
+          [loadListData]="loadListData"
+        ></app-details-load-list>
       </mat-tab>
-
-      <mat-tab label="Load blocks"> Load blocks </mat-tab>
+      <mat-tab label="Load blocks">
+        <app-load-blocks [loadBlocksData]="loadBlocksData"></app-load-blocks>
+      </mat-tab>
     </mat-tab-group>
   </div>
 </div>
