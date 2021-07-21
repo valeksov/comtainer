@@ -7,6 +7,7 @@ import { Component, Input, OnChanges, OnInit } from '@angular/core';
 })
 export class DetailsLoadListComponent implements OnInit, OnChanges {
   @Input() loadListData: any;
+  @Input() groups: any;
 
   displayedColumns: string[] = [
     'number',
@@ -28,12 +29,22 @@ export class DetailsLoadListComponent implements OnInit, OnChanges {
 
   ngOnChanges() {
     this.dataSource = this.loadListData?.loadPlan?.items;
-    console.log('Load List:', this.dataSource);
+    console.log('this.groups:', this.groups);
+
+    // this.groups.forEach((group: any) => {
+    //   group.forEach((element: any) => {
+    //     console.log('id', element);
+    //   });
+    // });
   }
 
   calculateVolume(element: LoadListItem) {
-    const volume = element.width * element.height * element.length * element.quantity;
-    return volume / 1000;
+    const volume =
+      (element.width / 1000) *
+      (element.height / 1000) *
+      (element.length / 1000) *
+      element.quantity;
+    return volume;
   }
 }
 
@@ -44,14 +55,14 @@ export interface LoadListItem {
   groupAlias: string;
   height: number;
   id: string;
-  length:number;
+  length: number;
   maxLayer: number;
   name: string;
   quantity: number;
   rotatable: boolean;
-  selfStackable: true
+  selfStackable: true;
   stackable: boolean;
-  weight:number;
+  weight: number;
   width: number;
 }
 

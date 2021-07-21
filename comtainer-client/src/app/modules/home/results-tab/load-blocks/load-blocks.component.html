@@ -1,5 +1,9 @@
 <div class="wrapper">
-  <div class="block mat-elevation-z1" *ngFor="let image of loadBlocksImages">
-    <img [src]="image | safe: 'url'" class="image"/>
+  <div
+    class="block mat-elevation-z1"
+    *ngFor="let image of loadBlocksImages; index as i"
+  >
+    <p class="step-number"> {{ i + 1 }}</p>
+    <img [src]="image | safe: 'url'" class="image" />
   </div>
 </div>

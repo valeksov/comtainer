@@ -1,5 +1,5 @@
 <div class="result-container" *ngIf="containers.length > 0">
-  <div>
+  <div class="left">
     <div class="view-icons">
       <mat-button-toggle-group>
         <!-- 3D_View, Bottom, Front, Left, Rear, Right, Top -->
@@ -79,8 +79,15 @@
         [matRippleUnbounded]="unbounded"
         *ngFor="let container of containers; index as i"
         (click)="onClickToRipple(container)"
+        matTooltip="{{ createContainerMetaData(container) }}"
+        matTooltipPosition="above"
       >
-        <p class="title">{{ container.id }}</p>
+        <p class="title">
+          {{ container.id }}
+        </p>
+        <p class="meta-data">
+          {{ createContainerMetaData(container) }}
+        </p>
         <img
           [src]="container.loadPlan.images[selectView] | safe: 'url'"
           class="image"
@@ -91,9 +98,11 @@
   </div>
 
   <div class="comtainer-info" *ngIf="selectedContainer">
+    <br />
     <span>
-      View details for: <b> {{ this.selectedContainerName }} </b></span
-    >
+      View details for: <b> {{ this.selectedContainerName }} </b>
+    </span>
+    <br />
     <mat-tab-group>
       <mat-tab label="Summary">
         <app-details-summary [summaryData]="summaryData"></app-details-summary>
@@ -101,7 +110,7 @@
 
       <mat-tab label="Load list">
         <app-details-load-list
-          [loadListData]="loadListData"
+          [loadListData]="loadListData" [groups]="groups"
         ></app-details-load-list>
       </mat-tab>
       <mat-tab label="Load blocks">

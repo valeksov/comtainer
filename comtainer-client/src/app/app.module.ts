@@ -21,6 +21,7 @@ import { loadPlanReducer } from './store/loadPlan.reducer';
 import { LoadBlocksComponent } from './modules/home/results-tab/load-blocks/load-blocks.component';
 import { SafePipe } from './modules/shared/safe.pipe';
 import { ToastrModule } from 'ngx-toastr';
+import { DecimalPipe } from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -52,7 +53,7 @@ import { ToastrModule } from 'ngx-toastr';
       preventDuplicates: true
     }),
   ],
-  providers: [],
+  providers: [DecimalPipe],
   bootstrap: [AppComponent],
   entryComponents: [UploadXlsComponent],
 })

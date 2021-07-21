@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, Input, OnChanges, OnInit } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Store } from '@ngrx/store';
@@ -15,6 +16,7 @@ export class ResultsTabComponent implements OnInit {
 
   loadPlanAllData: any;
   containers = [];
+  groups = [];
   selectedContainer: any;
   selectedContainerName: string = '';
   summaryData: any;
@@ -22,7 +24,12 @@ export class ResultsTabComponent implements OnInit {
   loadBlocksData: any;
   selectView: string = '3D_View';
 
-  constructor(private store: Store<AppState>) {
+  containerStats: any;
+
+  constructor(
+    private store: Store<AppState>,
+    private roundingPipe: DecimalPipe
+  ) {
     this.store.select('loadPlan').subscribe((plan) => {
       this.extractNeededData(plan);
     });
@@ -30,19 +37,45 @@ export class ResultsTabComponent implements OnInit {
 
   ngOnInit() {}
 
-  // changeContainerView(view: string) {
-  //   // this.selectView = view;
-  // }
-
   changeContainerView(view: string): void {
-    console.log('View:', view);
     this.selectView = view;
-    
   }
 
   private extractNeededData(planData: any) {
     this.containers = planData.containers;
-    console.log('Containers:', this.containers);
+    this.groups = planData.groups;
+    this.containerStats = planData?.containers?.loadPlan?.stats;
+  }
+
+  createContainerMetaData(container: any) {
+    const statsObj = container.loadPlan.stats;
+    // extract cargoes count
+    const cargoes = statsObj.filter((stat: any) => stat.name === 'Cargoes');
+    const cargoesCount = cargoes[0].used;
+
+    // extract volume
+    const volumeObj = statsObj.filter(
+      (stat: any) => stat.name === 'Volume (m3)'
+    );
+    const usedVolume = volumeObj[0].used / 1000000000;
+    const roundedVolume = this.roundingPipe.transform(usedVolume, '1.2-2');
+    // extract weight
+    const weightObj = statsObj.filter(
+      (stat: any) => stat.name === 'Weight (kg)'
+    );
+
+    const totalWeight = weightObj[0].used;
+    const roundedWeight = this.roundingPipe.transform(totalWeight);
+
+    return (
+      'Cargoes: ' +
+      cargoesCount +
+      '; ' +
+      roundedVolume +
+      '(m3); ' +
+      roundedWeight +
+      '(kg)'
+    );
   }
 
   onClickToRipple(container: any) {
