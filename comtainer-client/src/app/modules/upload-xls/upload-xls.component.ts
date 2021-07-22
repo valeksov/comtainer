@@ -60,8 +60,9 @@ export class UploadXlsComponent implements OnInit {
 
       this.httpLoadPlanService
         .getLoadPlan(this.dataForGeneratingImages)
-        .subscribe((loadPlan: any) => {
-          console.log(loadPlan);
+        .subscribe(
+          (loadPlan: any) => {
+          console.log('JSON:', loadPlan.body);
           if (loadPlan.status === 200 && loadPlan.statusText === 'OK') {
             this.loadPlanResponse = loadPlan.body;
             this.store.dispatch(
@@ -71,11 +72,16 @@ export class UploadXlsComponent implements OnInit {
             this.loading = false;
             this.infoService.success('Successfully converted');
           } else {
-            console.log('ERROR:', loadPlan.status);
             this.infoService.error('Error during converting');
+            this.dialogRef.close();
             this.loading = false;
           }
-        });
+        },
+        err => {
+          this.dialogRef.close();
+          this.loading = false;
+        },
+        );
     };
   }
 }

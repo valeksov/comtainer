@@ -12,7 +12,7 @@
   <!-- number -->
   <ng-container matColumnDef="number">
     <th mat-header-cell *matHeaderCellDef>#</th>
-    <td mat-cell *matCellDef="let element; let i = index;"> {{i + 1}} </td>
+    <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
   </ng-container>
 
   <!-- color -->
@@ -46,7 +46,9 @@
   <!-- quantity -->
   <ng-container matColumnDef="quantity">
     <th mat-header-cell *matHeaderCellDef>Quantity</th>
-    <td mat-cell *matCellDef="let element">{{ element.quantity }}</td>
+    <td mat-cell *matCellDef="let element">
+      {{ element.totalQuantity }}
+    </td>
   </ng-container>
 
   <!-- pieces -->
@@ -58,13 +60,17 @@
   <!-- volume -->
   <ng-container matColumnDef="volume">
     <th mat-header-cell *matHeaderCellDef>Volume(m3)</th>
-    <td mat-cell *matCellDef="let element">{{calculateVolume(element) | number: '1.2-2' }}</td>
+    <td mat-cell *matCellDef="let element">
+      {{ calculateVolume(element) | number: "1.2-2" }}
+    </td>
   </ng-container>
 
   <!-- weight -->
   <ng-container matColumnDef="weight">
     <th mat-header-cell *matHeaderCellDef>Weight(kg)</th>
-    <td mat-cell *matCellDef="let element">{{ element.weight | number: '1.2-2' }}</td>
+    <td mat-cell *matCellDef="let element">
+      {{ element.weight * element.quantity | number: "1.2-2" }}
+    </td>
   </ng-container>
 
   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

@@ -22,6 +22,7 @@ export class DetailsLoadListComponent implements OnInit, OnChanges {
   ];
 
   dataSource: LoadListItem[];
+  // calculatedQnty: any = [];
 
   constructor() {}
 
@@ -29,14 +30,64 @@ export class DetailsLoadListComponent implements OnInit, OnChanges {
 
   ngOnChanges() {
     this.dataSource = this.loadListData?.loadPlan?.items;
-    console.log('this.groups:', this.groups);
-
-    // this.groups.forEach((group: any) => {
-    //   group.forEach((element: any) => {
-    //     console.log('id', element);
-    //   });
-    // });
+    // this.calculateQuantity();
+    // console.log('DS', this.dataSource);
+    // console.log('Gp', this.groups);
   }
+
+  // calculateQuantity() {
+  //   this.groups.forEach((group: any) => {
+  //     group.items.forEach((item: any) => {
+  //       this.calculatedQnty.push(item);
+  //     });
+  //     // group.items.forEach(({ name, quantity: pieces }) => {
+  //     //   this.calculatedQnty.push({ name, pieces });
+  //     // });
+  //   });
+  //   const result: any = [];
+  //   this.calculatedQnty.forEach((item: any) => {
+  //     if (![item.name]) {
+  //       item.name = { name: item.name, pieces: 0 };
+  //       result.push(item.name);
+  //     }
+  //     item.pieces += item.pieces;
+  //   }, Object.create(null));
+  //   // result = [];
+
+  //   // arr.forEach(function (a) {
+  //   //     if (!this[a.name]) {
+  //   //         this[a.name] = { name: a.name, contributions: 0 };
+  //   //         result.push(this[a.name]);
+  //   //     }
+  //   //     this[a.name].contributions += a.contributions;
+  //   // }, Object.create(null));
+
+  //   console.log(result);
+  //   // this.mergeArr();
+  // }
+
+  // mergeArr() {
+  //   const sortedQty = [...this.calculatedQnty].sort((a, b) =>
+  //     a.name > b.name ? -1 : 1
+  //   );
+  //   const sortedData = [...this.dataSource].sort((a, b) =>
+  //     a.name > b.name ? -1 : 1
+  //   );
+  //   // console.log(sortedQty);
+  //   // console.log(sortedData);
+  //   // const newData = this.dataSource.sort().forEach((element: any) => {
+  //   //   this.calculatedQnty.sort().forEach((entry: any) => {
+  //   //     if (element.name === entry.name) {
+  //   //       Object.assign({},  element, entry.pieces)
+  //   //       // element.pieces = entry.pieces;
+  //   //     }
+  //   //   });
+  //   // });
+
+  //   // console.log('new data:', newData);
+  // }
+
+  // showQuantity(element: any) {}
 
   calculateVolume(element: LoadListItem) {
     const volume =

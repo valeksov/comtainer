@@ -6,7 +6,7 @@ import { HomeComponent } from './modules/home/home/home.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from './modules/shared/material';
 import { ContainersTableComponent } from './modules/home/containers-table/containers-table.component';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { LoginComponent } from './modules/login/login.component';
 import { AppRoutingModule } from './app-routing.module';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -22,6 +22,7 @@ import { LoadBlocksComponent } from './modules/home/results-tab/load-blocks/load
 import { SafePipe } from './modules/shared/safe.pipe';
 import { ToastrModule } from 'ngx-toastr';
 import { DecimalPipe } from '@angular/common';
+import { HttpErrorInterceptor } from './modules/helpers/http-error-interceptor';
 
 @NgModule({
   declarations: [
@@ -50,10 +51,17 @@ import { DecimalPipe } from '@angular/common';
     ToastrModule.forRoot({
       timeOut: 3000,
       positionClass: 'toast-top-center',
-      preventDuplicates: true
+      preventDuplicates: true,
     }),
   ],
-  providers: [DecimalPipe],
+  providers: [
+    DecimalPipe,
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: HttpErrorInterceptor,
+      multi: true,
+    },
+  ],
   bootstrap: [AppComponent],
   entryComponents: [UploadXlsComponent],
 })

@@ -1,7 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
-import { catchError, retry } from 'rxjs/operators';
+import { retry } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
@@ -16,13 +15,7 @@ export class MenageDrawnImagesService {
 
   getLoadPlan(data: any) {
     return this.http
-      .post(
-        this.LOAD_PLAN_URL_LOCAL_JSON,
-        { ...data },
-        { observe:  'response'}
-      )
-      .pipe(
-        retry(1)
-          );
+      .post(this.LOAD_PLAN_URL_LOCAL_JSON, { ...data }, { observe: 'response' })
+      .pipe(retry(1));
   }
 }
