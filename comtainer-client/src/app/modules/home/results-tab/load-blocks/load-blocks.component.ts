@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges, OnInit } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
+import { asapScheduler } from 'rxjs';
 
 @Component({
   selector: 'app-load-blocks',
@@ -10,20 +11,18 @@ export class LoadBlocksComponent implements OnInit, OnChanges {
   @Input() loadBlocksData: any;
 
   currentContainerData: any;
-  loadBlocksImages = [];
-
+  loadBlocks = [];
+  loadBlocksDescription = [];
   constructor() {}
 
   ngOnInit() {}
 
   ngOnChanges() {
     this.currentContainerData = this.loadBlocksData;
-    console.log(this.currentContainerData);
-    this.loadBlocksImages = [];
+    this.loadBlocks = [];
 
     this.currentContainerData?.loadPlan?.loadPlanSteps?.forEach(
-      (step: any, index) => {
-        // console.log(step, index);
+      (step: any, index: number) => {
         let block = {
           image: '',
           cargo: [],
@@ -31,21 +30,28 @@ export class LoadBlocksComponent implements OnInit, OnChanges {
         };
         block.image = step.image;
         block.index = index + 1;
-        console.log('Each Step', step);
-        const counts = { };
-        step.items.forEach((item: any) => {
-          counts[item] = (counts[item.cargo.name] || 0) + 1;
-
-          // let c = {};
-          // c.name = item.cargo.name;
-
-          // (c.cargoes = item.cargo.name), (c.qnty = 1);
-          // block.cargo.push(c);
-          console.log(counts.item);
-        });
-        this.loadBlocksImages.push(block);
+        block.cargo.push(...step.items);
+        this.loadBlocks.push(block);
       }
     );
-    // console.log(this.loadBlocksImages);
+    this.mapLoadingSteps();
+  }
+
+  mapLoadingSteps() {
+    this.loadBlocksDescription = [];
+    this.loadBlocks.forEach((block: any, index: number) => {
+      const cargoes = block.cargo;
+      cargoes.forEach((k) => {
+        const info: any = {};
+        info.name = k.cargo.name;
+        info.index = index + 1;
+        this.loadBlocksDescription.push(info);
+      });
+    });
+    this.calculateBlocks();
+  }
+
+  calculateBlocks() {
+    // TODO
   }
 }

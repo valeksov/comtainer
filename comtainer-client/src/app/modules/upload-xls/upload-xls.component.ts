@@ -62,7 +62,7 @@ export class UploadXlsComponent implements OnInit {
         .getLoadPlan(this.dataForGeneratingImages)
         .subscribe(
           (loadPlan: any) => {
-          console.log('JSON:', loadPlan.body);
+          console.log('RESPONSE:', loadPlan.body);
           if (loadPlan.status === 200 && loadPlan.statusText === 'OK') {
             this.loadPlanResponse = loadPlan.body;
             this.store.dispatch(

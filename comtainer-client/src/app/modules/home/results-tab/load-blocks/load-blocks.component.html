@@ -1,13 +1,13 @@
 <div class="wrapper">
   <div
-    class="block mat-elevation-z1"
-    *ngFor="let individualStep of loadBlocksImages"
+    class="block mat-elevation-z3"
+    *ngFor="let individualStep of loadBlocks"
   >
     <p class="step-number">{{ individualStep.index }}</p>
 
-    <ng-container class="package" *ngFor="let pack of individualStep.cargo">
-      <p class="pck-result">{{ pack.cargoes + "x" + pack.qnty }}</p>
-    </ng-container>
+    <!-- <ng-container class="package" *ngFor="let pack of individualStep.cargo">
+      <p class="pck-result">{{ pack.cargo.name }}</p>
+    </ng-container> -->
 
     <img [src]="individualStep.image | safe: 'url'" class="image" />
   </div>
