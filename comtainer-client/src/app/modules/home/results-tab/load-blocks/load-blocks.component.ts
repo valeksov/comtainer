@@ -41,7 +41,7 @@ export class LoadBlocksComponent implements OnInit, OnChanges {
     this.loadBlocksDescription = [];
     this.loadBlocks.forEach((block: any, index: number) => {
       const cargoes = block.cargo;
-      cargoes.forEach((k) => {
+      cargoes.forEach((k: any) => {
         const info: any = {};
         info.name = k.cargo.name;
         info.index = index + 1;
@@ -52,6 +52,6 @@ export class LoadBlocksComponent implements OnInit, OnChanges {
   }
 
   calculateBlocks() {
-    // TODO
+    //TODO
   }
 }
