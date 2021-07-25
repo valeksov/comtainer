@@ -12,7 +12,6 @@ export class LoadBlocksComponent implements OnInit, OnChanges {
 
   currentContainerData: any;
   loadBlocks = [];
-  loadBlocksDescription = [];
   constructor() {}
 
   ngOnInit() {}
@@ -20,7 +19,11 @@ export class LoadBlocksComponent implements OnInit, OnChanges {
   ngOnChanges() {
     this.currentContainerData = this.loadBlocksData;
     this.loadBlocks = [];
+    this.extractSteps();
+    this.mapLoadingSteps();
+  }
 
+  extractSteps() {
     this.currentContainerData?.loadPlan?.loadPlanSteps?.forEach(
       (step: any, index: number) => {
         let block = {
@@ -34,24 +37,24 @@ export class LoadBlocksComponent implements OnInit, OnChanges {
         this.loadBlocks.push(block);
       }
     );
-    this.mapLoadingSteps();
   }
 
   mapLoadingSteps() {
-    this.loadBlocksDescription = [];
-    this.loadBlocks.forEach((block: any, index: number) => {
+    this.loadBlocks.forEach((block: any) => {
       const cargoes = block.cargo;
-      cargoes.forEach((k: any) => {
-        const info: any = {};
-        info.name = k.cargo.name;
-        info.index = index + 1;
-        this.loadBlocksDescription.push(info);
-      });
-    });
-    this.calculateBlocks();
-  }
 
-  calculateBlocks() {
-    //TODO
+      const individual = cargoes.map((cargo: any) => {
+        return cargo.cargo.name;
+      });
+      const counts = {};
+
+      individual.forEach(function (c) {
+        counts[c] = (counts[c] || 0) + 1;
+      });
+
+      const info: any = {};
+      info.items = counts;
+      block.description = info;
+    });
   }
 }

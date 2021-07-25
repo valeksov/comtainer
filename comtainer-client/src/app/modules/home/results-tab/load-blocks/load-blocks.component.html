@@ -5,9 +5,11 @@
   >
     <p class="step-number">{{ individualStep.index }}</p>
 
-    <!-- <ng-container class="package" *ngFor="let pack of individualStep.cargo">
-      <p class="pck-result">{{ pack.cargo.name }}</p>
-    </ng-container> -->
+    <ng-container class="package">
+      <p class="pck-result" *ngFor="let item of individualStep.description.items | keyvalue">
+       {{item.key}} x {{item.value}}
+      </p>
+    </ng-container>
 
     <img [src]="individualStep.image | safe: 'url'" class="image" />
   </div>
